@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Bate</title>
+<meta name="description" content="Verdade ou mentira? Convencer vale mais do que estar certo.">
+<meta name="theme-color" content="#0E1F1A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The Bate">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Fanzine em risografia: verde-garrafa quase preto, formas chapadas em cobalto e rosa fluorescente com contorno fora de registro.
+     Layout: tela cheia de celular; verdade em cima, mentira embaixo, nomes soltos flutuando no meio. */
+  --ground:#0E1F1A;
+  --cream:#F2E8D5;
+  --pink:#FF4FA3;
+  --cobalt:#2F4BFF;
+  --sage:#C9D2C4;
+  --display:"Bricolage Grotesque","Arial Black",sans-serif;
+  --mono:"IBM Plex Mono","Courier New",monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--ground);color:var(--cream);font-family:var(--display);font-weight:500;font-size:18px;line-height:1.35;overflow-x:hidden}
+#app{max-width:480px;height:100%;margin:0 auto;position:relative}
+h1,h2,p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--pink);outline-offset:3px}
+.page{padding:28px 24px 44px;display:flex;flex-direction:column;gap:22px;min-height:100%}
+.wm{font-weight:800;letter-spacing:-.04em;text-transform:lowercase;line-height:.86}
+.wm i{font-style:normal;color:var(--pink)}
+.wm.big{font-size:clamp(76px,25vw,112px);margin-top:10px}
+.wm.small{font-size:24px}
+.mono{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);font-weight:400}
+.group{display:flex;flex-direction:column;gap:10px}
+.names{display:flex;flex-wrap:wrap;gap:8px}
+.tagn{background:var(--cream);color:var(--ground);font-weight:800;font-size:18px;letter-spacing:-.02em;text-transform:lowercase;padding:8px 14px;display:inline-flex;align-items:center;gap:8px;overflow-wrap:anywhere;max-width:100%}
+.tagn:nth-child(3n){border-radius:52% 48% 46% 54% / 60% 56% 44% 40%}
+.tagn:nth-child(3n+1){border-radius:46% 54% 52% 48% / 54% 44% 56% 46%}
+.tagn:nth-child(3n+2){border-radius:56% 44% 48% 52% / 50% 58% 42% 50%}
+.tagn .x{font-family:var(--mono);font-size:18px;line-height:1;padding:2px 4px}
+.tagn b{color:var(--cobalt);font-weight:800}
+.addrow{display:flex;gap:8px}
+input[type=text],select{font-family:var(--mono);font-size:16px;color:var(--cream);background:transparent;border:1.5px solid var(--cream);border-radius:999px;padding:11px 16px;min-width:0}
+input[type=text]{flex:1}
+input::placeholder{color:var(--sage)}
+select option{color:#111}
+.pill{font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--cream);border-radius:999px;padding:9px 14px;white-space:nowrap}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{border:1.5px solid var(--cream);padding:14px 14px 16px;text-align:left;font-weight:800;font-size:26px;letter-spacing:-.03em;text-transform:lowercase;line-height:1;border-radius:34px 42px 30px 46px / 40px 30px 46px 34px}
+.mode span{display:block;font-family:var(--mono);font-weight:400;font-size:11.5px;letter-spacing:.04em;line-height:1.35;margin-top:8px;text-transform:none}
+.mode{position:relative;overflow:hidden;isolation:isolate;transition:color .35s,border-color .35s}
+.mode .ink{position:absolute;z-index:-1;left:var(--ox,50%);top:var(--oy,50%);width:330%;aspect-ratio:1;background:var(--pink);border-radius:42% 58% 50% 50% / 56% 42% 58% 44%;
+  transform:translate(-50%,-50%) scale(0) rotate(-30deg);transition:transform .75s cubic-bezier(.3,.9,.3,1)}
+.mode[data-v="equipes"] .ink{background:var(--cobalt)}
+.mode[aria-pressed="true"] .ink{transform:translate(-50%,-50%) scale(1) rotate(40deg)}
+.mode[aria-pressed="true"]{border-color:var(--pink);color:var(--ground)}
+.mode[data-v="equipes"][aria-pressed="true"]{border-color:var(--cobalt);color:var(--cream)}
+.go{background:var(--cream);color:var(--ground);font-weight:800;font-size:24px;letter-spacing:-.03em;text-transform:lowercase;padding:14px 26px;border-radius:999px}
+.go.wide{width:100%}
+.go:disabled{background:transparent;color:var(--sage);border:1.5px dashed var(--sage);cursor:not-allowed}
+.go:active:not(:disabled){transform:scale(.97)}
+/* jogo */
+.play{position:relative;height:100%;min-height:560px;display:flex;flex-direction:column;overflow:hidden}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;position:relative;z-index:3}
+.arena{position:relative;flex:1;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+.blob{position:absolute;left:-18%;width:118%;height:44%;pointer-events:none;animation:morph 14s ease-in-out infinite alternate}
+.blob.bv{top:-9%;background:var(--cobalt);border-radius:38% 62% 46% 54% / 40% 44% 56% 60%;transform:rotate(-5deg)}
+.blob.bm{bottom:-10%;left:auto;right:-20%;background:var(--pink);border-radius:58% 42% 62% 38% / 56% 60% 40% 44%;transform:rotate(5deg);animation-delay:-6s}
+.blob.ol{background:none;border:2px solid var(--cream);margin:12px 0 0 14px}
+.blob.bm.ol{margin:-14px 12px 0 0}
+@keyframes morph{to{border-radius:56% 44% 58% 42% / 52% 58% 42% 48%}}
+.zl{position:absolute;font-weight:800;font-size:44px;letter-spacing:-.04em;text-transform:lowercase;line-height:1;pointer-events:none}
+.zl.v{left:20px;top:10px}.zl.m{right:20px;bottom:12px;color:var(--ground)}
+.team{position:absolute;font-family:var(--mono);font-size:12px;letter-spacing:.04em;line-height:1.35;max-width:62%;pointer-events:none}
+.team.v{left:22px;top:60px}.team.m{right:22px;bottom:62px;text-align:right;color:var(--ground)}
+.mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;transition:opacity .4s}
+.chip{position:absolute;left:0;top:0;height:50px;padding:0 20px;font-weight:800;font-size:19px;letter-spacing:-.02em;text-transform:lowercase;white-space:nowrap;
+  border:2px solid var(--cream);background:var(--ground);color:var(--cream);border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;touch-action:none;cursor:grab;will-change:transform;transition:background .25s,color .25s}
+.chip:nth-child(odd){border-radius:46% 54% 52% 48% / 54% 44% 56% 46%}
+.chip.in{background:var(--cream);color:var(--ground)}
+.chip.held{cursor:grabbing;z-index:2;box-shadow:6px 8px 0 rgba(14,31,26,.45)}
+.sheet{position:absolute;inset:0;z-index:5;background:var(--ground);padding:26px 24px 30px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+.sheet[hidden]{display:none}
+.stmt{font-weight:800;font-size:clamp(30px,8.6vw,40px);line-height:1;letter-spacing:-.035em;text-wrap:balance}
+.push{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+/* revelação */
+.verdict{align-self:flex-start;font-weight:800;font-size:clamp(56px,18vw,80px);letter-spacing:-.05em;text-transform:lowercase;line-height:.9;padding:22px 34px 28px;margin:4px 0 4px -10px;animation:plop .5s cubic-bezier(.2,1.5,.4,1)}
+.verdict.v{background:var(--cobalt);color:var(--cream);border-radius:60% 40% 52% 48% / 46% 62% 38% 54%;transform:rotate(-4deg);box-shadow:10px 12px 0 -2px var(--ground),10px 12px 0 0 var(--cream)}
+.verdict.m{background:var(--pink);color:var(--ground);border-radius:42% 58% 36% 64% / 60% 40% 60% 40%;transform:rotate(3deg);box-shadow:10px 12px 0 -2px var(--ground),10px 12px 0 0 var(--cream)}
+@keyframes plop{from{transform:scale(.4) rotate(-12deg)}}
+.why{font-size:20px;line-height:1.36}
+.quote{font-family:var(--mono);font-size:13.5px;line-height:1.45;color:var(--sage)}
+.solo{font-weight:800;font-size:26px;letter-spacing:-.03em;line-height:1.05;text-transform:lowercase}
+.solo i{font-style:normal;color:var(--pink)}
+.rank{list-style:none;margin:0;padding:0}
+.rank li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1.5px solid rgba(242,232,213,.3);font-weight:800;font-size:24px;letter-spacing:-.03em;text-transform:lowercase;overflow-wrap:anywhere}
+.rank li span:last-child{font-family:var(--mono);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums;letter-spacing:0;text-align:right}
+.rank small{display:block;font-family:var(--mono);font-weight:400;font-size:11.5px;letter-spacing:.04em;color:var(--sage);text-transform:none}
+.champ{font-weight:800;font-size:clamp(64px,21vw,104px);letter-spacing:-.05em;line-height:.86;text-transform:lowercase;overflow-wrap:anywhere}
+.addbtn{flex:none;width:54px;height:54px;background:var(--pink);color:var(--ground);display:grid;place-items:center;border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;
+  box-shadow:4px 5px 0 -2px var(--ground),4px 5px 0 0 var(--cream);animation:morph 4s ease-in-out infinite alternate;transition:transform .15s}
+.addbtn svg{animation:spin 10s linear infinite}
+.addbtn.ready svg,.addbtn:hover svg{animation-duration:1.4s}
+.addbtn:active{transform:scale(.84) rotate(-8deg)}
+.addbtn.burst{animation:burst .65s cubic-bezier(.2,1.6,.4,1)}
+.addbtn.burst svg{animation:spin .65s cubic-bezier(.2,.8,.2,1)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes burst{0%{transform:scale(.55)}55%{transform:scale(1.4) rotate(12deg)}100%{transform:scale(1)}}
+.tagn.new{animation:plop .5s cubic-bezier(.2,1.5,.4,1)}
+.tval{font-weight:800;font-size:44px;letter-spacing:-.04em;line-height:.9;text-transform:lowercase;font-variant-numeric:tabular-nums}
+.sl{position:relative;height:72px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;border-radius:36px}
+.sl:active{cursor:grabbing}
+.sl-track{position:absolute;left:0;right:0;top:50%;height:18px;margin-top:-9px;border:2px solid var(--cream);border-radius:60px 40px 70px 30px / 30px 60px 40px 70px;overflow:hidden}
+.sl-fill{height:100%;background:var(--cobalt);transform-origin:left center;transform:scaleX(.5)}
+.sl-thumb{position:absolute;left:0;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;background:var(--pink);color:var(--ground);display:grid;place-items:center;
+  border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;box-shadow:4px 5px 0 -2px var(--ground),4px 5px 0 0 var(--cream);will-change:transform;animation:morph 3s ease-in-out infinite alternate}
+.lens{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.len{border:1.5px solid var(--cream);padding:12px 10px 13px;text-align:left;font-weight:800;font-size:20px;letter-spacing:-.03em;text-transform:lowercase;line-height:1;border-radius:26px 32px 24px 34px / 30px 24px 34px 26px}
+.len span{display:block;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.04em;margin-top:7px}
+@property --l{syntax:"<length>";inherits:false;initial-value:0px}
+@property --r{syntax:"<length>";inherits:false;initial-value:0px}
+.lens{position:relative}
+/* Camada creme recortada: a borda da frente corre, a de trás demora, e o preenchimento escorre de uma bolha à outra. */
+.lens-top{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;pointer-events:none;background:var(--cream);color:var(--ground);
+  clip-path:inset(0 var(--r) 0 var(--l) round 26px 32px 24px 34px / 30px 24px 34px 26px);transition:--r .42s cubic-bezier(.3,.8,.3,1),--l .72s cubic-bezier(.5,0,.2,1) .1s}
+.lens-top.left{transition:--l .42s cubic-bezier(.3,.8,.3,1),--r .72s cubic-bezier(.5,0,.2,1) .1s}
+.lens-top.noanim{transition:none}
+.lens-top .len{display:block;border-color:transparent}
+.sheet.fixed{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px}
+.rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px;font-size:19px;line-height:1.3}
+.rules b{font-weight:800}
+.rules .mono{display:block;margin-bottom:4px;color:var(--pink)}
+.pill.hot{background:var(--pink);border-color:var(--pink);color:var(--ground)}
+.curtain{position:fixed;inset:0;z-index:9;background:var(--ground);display:grid;place-items:center;overflow:hidden;animation:gone .45s var(--end) forwards}
+@keyframes gone{to{opacity:0;visibility:hidden}}
+.curtain .dot{position:absolute;left:50%;top:50%;width:96px;height:96px;border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;animation:sway 1.1s ease-in-out infinite alternate}
+.curtain .dot.c{background:var(--cobalt);margin:-48px 0 0 -150px}
+.curtain .dot.p{background:var(--pink);margin:-48px 0 0 54px;animation-delay:-.55s}
+@keyframes sway{from{transform:translateY(-20px) scale(.82) rotate(-10deg)}to{transform:translateY(20px) scale(1.18) rotate(10deg)}}
+.curtain .dec{position:absolute;left:0;right:0;top:24%;text-align:center;color:var(--pink)}
+.curtain .flood{position:absolute;left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;border-radius:46% 54% 52% 48% / 54% 44% 56% 46%;transform:scale(0);animation:flood .9s var(--sus) cubic-bezier(.3,.8,.3,1) forwards}
+.curtain.v .flood{background:var(--cobalt)}.curtain.m .flood{background:var(--pink)}
+@keyframes flood{to{transform:scale(1) rotate(25deg)}}
+.curtain .word{position:relative;font-weight:800;font-size:clamp(64px,22vw,112px);letter-spacing:-.05em;text-transform:lowercase;opacity:0;animation:wordin .35s calc(var(--sus) + .5s) cubic-bezier(.2,1.5,.4,1) forwards}
+.curtain.m .word{color:var(--ground)}
+@keyframes wordin{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.mode{font-size:clamp(19px,5.6vw,26px)}
+.subs{display:flex;gap:8px}
+.pill[aria-pressed="true"]{background:var(--cream);color:var(--ground)}
+.pill[aria-pressed]{transition:background .3s,color .3s}
+.chip.mesa{height:80px;padding:0 34px;font-size:30px;background:var(--pink);border-color:var(--pink);color:var(--ground)}
+.chip.mesa.in{background:var(--cream);border-color:var(--cream)}
+.chip.trai{background:var(--ground);color:var(--pink);border-color:var(--pink)}
+.chip.trai::after{content:"*"}
+.howbox{display:flex;flex-direction:column;gap:18px}
+.how{list-style:none;margin:0;padding:0;counter-reset:h;display:flex;flex-direction:column;gap:16px}
+.how li{counter-increment:h;display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:center;font-size:19px;line-height:1.28}
+.how li::before{content:counter(h);width:58px;height:58px;display:grid;place-items:center;font-weight:800;font-size:30px;letter-spacing:-.04em;background:var(--pink);color:var(--ground);border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;animation:morph 5s ease-in-out infinite alternate}
+.how li:nth-child(2)::before{background:var(--cobalt);color:var(--cream);border-radius:46% 54% 52% 48% / 54% 44% 56% 46%;animation-delay:-2s}
+.how li:nth-child(3)::before{background:var(--cream);border-radius:56% 44% 48% 52% / 50% 58% 42% 50%;animation-delay:-4s}
+.how b{font-weight:800}
+.howpts{border:1.5px dashed var(--cream);border-radius:28px 34px 26px 36px / 32px 26px 36px 28px;padding:14px 18px;font-size:16px;line-height:1.4}
+.howpts i{font-style:normal;font-weight:800;color:var(--pink)}
+.bub{align-self:center;width:210px;height:210px;display:grid;place-items:center}
+.bub-b{position:relative;width:var(--s);height:var(--s);background:var(--pink);border-radius:52% 48% 46% 54% / 60% 56% 44% 40%;box-shadow:6px 7px 0 -2px var(--ground),6px 7px 0 0 var(--cream);
+  transition:width .9s cubic-bezier(.2,1.7,.4,1),height .9s cubic-bezier(.2,1.7,.4,1);animation:morph 5s ease-in-out infinite alternate}
+.bub:not([data-run="0"]) .bub-b{animation:morph 5s ease-in-out infinite alternate,shake .45s linear infinite}
+@keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,1px) rotate(-1.5deg)}75%{transform:translate(2px,-1px) rotate(1.5deg)}}
+.bub svg{position:absolute;inset:6%;width:88%;height:88%}
+.bub path{fill:none;stroke:var(--ground);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .35s}
+.bub[data-run="1"] .c1,.bub[data-run="2"] .c1,.bub[data-run="2"] .c2,.bub[data-run="3"] .c1,.bub[data-run="3"] .c2,.bub[data-run="3"] .c3,.bub[data-run="4"] path{opacity:1}
+.pop{position:relative;height:150px;align-self:center;width:150px}
+.pop span{position:absolute;left:50%;top:50%;margin:-16px 0 0 -16px;color:var(--pink);transform:rotate(var(--a)) translateY(-62px);animation:fly .7s var(--d) cubic-bezier(.2,1.5,.4,1) backwards}
+.pop span:nth-child(even){color:var(--cobalt)}.pop span:nth-child(3n){color:var(--cream)}
+@keyframes fly{from{transform:rotate(var(--a)) translateY(0) scale(0)}}
+[hidden]{display:none!important}
+.mode.wide{grid-column:1 / -1}
+.mode[data-v="juri"] .ink{background:var(--cobalt)}
+.mode[data-v="juri"][aria-pressed="true"]{border-color:var(--cobalt);color:var(--cream)}
+.mode[data-v="troca"] .ink{background:var(--cream)}
+.mode[data-v="troca"][aria-pressed="true"]{border-color:var(--cream);color:var(--ground)}
+.bub{position:relative}
+.bub .pop{display:none;position:absolute;left:50%;top:50%;margin:-75px 0 0 -75px}
+.bub.burst .pop{display:block}
+.bub.burst .bub-b{animation:popout .45s ease-out forwards}
+@keyframes popout{50%{transform:scale(1.3)}100%{transform:scale(1.9);opacity:0}}
+.bub.flat .bub-b{animation:none;transition:width 1.4s ease-in,height 1.4s ease-in}
+.bub.flat path{opacity:1}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+/* Cartas: [id, categoria, resposta (V/M), frente, verso]. Idioma: pt-BR. Para adicionar cartas, basta acrescentar linhas. */
+const CARDS = [
+["v01", "natureza", "V", `Tubarões existem há mais tempo do que os anéis de Saturno.`, `Tubarões surgiram há cerca de 450 milhões de anos. As estimativas mais citadas dão aos anéis de Saturno entre 100 e 400 milhões de anos, embora a idade deles ainda seja debatida.`, `Sharks have been around longer than Saturn's rings.`, `Sharks first appeared around 450 million years ago. The most-cited estimates put Saturn's rings at 100 to 400 million years old, though their age is still debated.`],
+["v02", "espaço", "V", `Um dia em Vênus dura mais do que um ano venusiano.`, `Vênus leva 243 dias terrestres para girar em torno de si mesmo e só 225 para dar a volta no Sol.`, `A day on Venus lasts longer than a year on Venus.`, `Venus takes 243 Earth days to spin once on its axis, but only 225 to orbit the Sun.`],
+["v03", "história", "V", `Cleópatra viveu mais perto da criação do iPhone do que da construção das Grandes Pirâmides.`, `A Grande Pirâmide ficou pronta por volta de 2560 a.C. Cleópatra morreu em 30 a.C., uns 2.500 anos depois, e o iPhone chegou em 2007, cerca de 2.040 anos depois dela.`, `Cleopatra lived closer in time to the invention of the iPhone than to the building of the Great Pyramids.`, `The Great Pyramid was finished around 2560 BC. Cleopatra died in 30 BC, about 2,500 years later, and the iPhone arrived in 2007, roughly 2,040 years after her.`],
+["v04", "natureza", "V", `Flamingos nascem cinzentos ou brancos.`, `O rosa vem dos carotenoides das algas e crustáceos que eles comem. Sem essa dieta, a plumagem desbota.`, `Flamingos are born gray or white.`, `The pink comes from carotenoids in the algae and crustaceans they eat. Without that diet, their feathers fade.`],
+["v05", "natureza", "V", `Existem mais árvores na Terra do que estrelas na Via Láctea.`, `Um estudo de 2015 estimou cerca de 3 trilhões de árvores. A Via Láctea tem entre 100 e 400 bilhões de estrelas.`, `There are more trees on Earth than stars in the Milky Way.`, `A 2015 study estimated around 3 trillion trees. The Milky Way has between 100 and 400 billion stars.`],
+["v08", "corpo", "V", `Humanos compartilham cerca de 60% dos genes com bananas.`, `Cerca de 60% dos nossos genes têm um equivalente reconhecível na banana. Isso é diferente de dizer que 60% do DNA é idêntico.`, `Humans share about 60% of their genes with bananas.`, `About 60% of our genes have a recognizable counterpart in bananas. That's not the same as saying 60% of our DNA is identical.`],
+["v09", "espaço", "V", `O Sol concentra mais de 99% da massa do Sistema Solar.`, `São 99,86%. Júpiter fica com a maior parte do que sobra.`, `The Sun holds more than 99% of the Solar System's mass.`, `It's 99.86%. Jupiter claims most of what's left.`],
+["v10", "espaço", "V", `Saturno, teoricamente, flutuaria em uma piscina gigante de água.`, `A densidade média de Saturno é de 0,69 g/cm³, menor que a da água.`, `Saturn would theoretically float in a giant pool of water.`, `Saturn's average density is 0.69 g/cm³, lower than water's.`],
+["v11", "natureza", "V", `Golfinhos possuem assobios característicos que funcionam como identificadores individuais.`, `Cada golfinho desenvolve um assobio-assinatura ainda filhote e reage quando ouve o próprio, como quem atende pelo nome.`, `Dolphins have signature whistles that work like individual names.`, `Each dolphin develops its own signature whistle as a calf and responds when it hears it, the same way we respond to our own name.`],
+["v13", "corpo", "V", `O cérebro consome aproximadamente 20% da energia do corpo em repouso.`, `Ele representa só 2% do peso do corpo, mas gasta um quinto da energia.`, `The brain uses about 20% of the body's energy at rest.`, `It makes up only 2% of body weight but burns a fifth of the body's energy.`],
+["v14", "ciência", "V", `O número de partidas possíveis de xadrez é maior do que o número de átomos no universo observável.`, `O matemático Claude Shannon estimou cerca de 10 elevado a 120 partidas. O universo observável tem algo como 10 elevado a 80 átomos.`, `There are more possible chess games than atoms in the observable universe.`, `Mathematician Claude Shannon estimated around 10 to the power of 120 possible games. The observable universe has something like 10 to the power of 80 atoms.`],
+["v15", "ciência", "V", `Mel pode permanecer preservado por milhares de anos em condições adequadas.`, `Potes de mel encontrados em tumbas egípcias ainda estavam conservados. Pouca água e muita acidez impedem os micróbios de crescer.`, `Honey can stay preserved for thousands of years under the right conditions.`, `Jars of honey found in Egyptian tombs were still edible. Low water content and high acidity keep microbes from growing.`],
+["v16", "natureza", "V", `Algumas tartarugas conseguem absorver oxigênio pela cloaca.`, `Certas espécies australianas e norte-americanas bombeiam água pela cloaca e retiram oxigênio dela, o que permite ficar meses submersas.`, `Some turtles can absorb oxygen through their cloaca.`, `Certain Australian and North American species pump water through their cloaca and extract oxygen from it, letting them stay underwater for months.`],
+["v17", "ciência", "V", `Um raio pode atingir temperaturas superiores às da superfície do Sol.`, `O canal de um raio chega a cerca de 30.000 °C, cinco vezes a temperatura da superfície solar.`, `A lightning bolt can reach temperatures hotter than the surface of the Sun.`, `A lightning channel can reach about 30,000°C, five times hotter than the Sun's surface.`],
+["v19", "espaço", "V", `Estrelas de nêutrons são tão densas que uma pequena quantidade de sua matéria pesaria bilhões de toneladas.`, `Uma colher de chá de estrela de nêutrons teria a massa de uma montanha: bilhões de toneladas.`, `Neutron stars are so dense that a tiny amount of their matter would weigh billions of tons.`, `A teaspoon of neutron star would have the mass of a mountain: billions of tons.`],
+["v20", "ciência", "V", `A Torre Eiffel fica ligeiramente mais alta durante o verão.`, `O ferro se dilata com o calor e a torre pode ganhar até uns 15 cm nos dias mais quentes.`, `The Eiffel Tower gets slightly taller in summer.`, `Iron expands with heat, and the tower can gain up to about 15 cm on the hottest days.`],
+["v21", "natureza", "V", `Cavalos conseguem dormir em pé.`, `Um sistema de tendões e ligamentos trava as pernas. Para o sono profundo, porém, eles precisam se deitar.`, `Horses can sleep standing up.`, `A system of tendons and ligaments locks their legs in place. For deep sleep, though, they still need to lie down.`],
+["v22", "natureza", "V", `Uma espécie de água-viva consegue reverter seu ciclo de vida e voltar a uma fase juvenil.`, `A Turritopsis dohrnii, apelidada de água-viva imortal, volta ao estágio de pólipo quando sofre estresse ou ferimentos.`, `One species of jellyfish can reverse its life cycle and go back to a juvenile stage.`, `Turritopsis dohrnii, nicknamed the immortal jellyfish, reverts to its polyp stage when stressed or injured.`],
+["v23", "natureza", "V", `Tubarões substituem seus dentes continuamente.`, `Os dentes ficam em fileiras que avançam como uma esteira. Um tubarão pode usar dezenas de milhares ao longo da vida.`, `Sharks continuously replace their teeth.`, `Their teeth sit in rows that move forward like a conveyor belt. A shark can go through tens of thousands over its lifetime.`],
+["v24", "corpo", "V", `Humanos compartilham aproximadamente 99,9% do DNA entre si.`, `Toda a diversidade humana cabe em cerca de 0,1% do genoma.`, `Humans share about 99.9% of their DNA with each other.`, `All of human diversity fits into about 0.1% of the genome.`],
+["v25", "espaço", "V", `Pegadas deixadas na Lua podem permanecer preservadas por milhões de anos.`, `Sem vento nem chuva, só a queda lenta de micrometeoritos consegue apagá-las.`, `Footprints left on the Moon could stay preserved for millions of years.`, `With no wind or rain, only the slow fall of micrometeorites can erase them.`],
+["v26", "ciência", "V", `Uma substância produzida por castores já foi utilizada como aromatizante com cheiro semelhante à baunilha.`, `É o castóreo, secreção de glândulas próximas à cauda. Foi usado em perfumes e aromas de baunilha e framboesa; hoje é raríssimo na indústria.`, `A substance produced by beavers has been used as a flavoring with a smell similar to vanilla.`, `It's castoreum, a secretion from glands near the tail. It was used in perfumes and in vanilla and raspberry flavorings; today it's extremely rare in the industry.`],
+["v27", "natureza", "V", `Machos de algumas espécies de peixe-pescador abissal se fundem fisicamente ao corpo das fêmeas.`, `O macho morde a fêmea, os tecidos se unem e ele passa a viver do sangue dela, servindo como fornecedor permanente de esperma.`, `Males of some deep-sea anglerfish species physically fuse to the female's body.`, `The male bites the female, their tissues merge, and he starts living off her blood, becoming a permanent sperm supplier.`],
+["v28", "natureza", "V", `Fêmeas de hienas-malhadas possuem um pseudopênis e dão à luz através dele.`, `É um clitóris alongado, pelo qual elas urinam, copulam e parem. O primeiro parto costuma ser arriscado para mãe e filhote.`, `Female spotted hyenas have a pseudo-penis and give birth through it.`, `It's an elongated clitoris, which they use to urinate, mate, and give birth. The first birth is usually risky for both mother and cub.`],
+["v29", "natureza", "V", `O braço reprodutor de um argonauta pode se desprender e permanecer dentro da fêmea.`, `O braço carregado de esperma se solta do macho e fica na fêmea. O naturalista Cuvier chegou a descrevê-lo como um verme parasita.`, `An argonaut's mating arm can break off and stay inside the female.`, `The sperm-filled arm detaches from the male and remains inside the female. Naturalist Cuvier even described it as a parasitic worm.`],
+["v30", "natureza", "V", `Fêmeas de canguru possuem três vaginas.`, `Duas laterais conduzem o esperma e a central serve para o parto. Os machos têm um pênis bifurcado.`, `Female kangaroos have three vaginas.`, `Two side ones carry sperm, and the middle one is for giving birth. Males have a forked penis.`],
+["v31", "história", "V", `Na Grécia Antiga, já existia uma máquina automática que liberava água após a inserção de uma moeda.`, `O engenheiro grego Heron de Alexandria descreveu, no século 1, um aparelho de templo: o peso da moeda acionava uma alavanca que liberava água benta.`, `Ancient Greece already had a vending machine that dispensed water when you dropped in a coin.`, `Greek engineer Heron of Alexandria described a temple device in the 1st century: the weight of the coin triggered a lever that released holy water.`],
+["v32", "história", "V", `O imperador romano Vespasiano criou um imposto sobre a coleta de urina.`, `A urina era matéria-prima para curtumes e lavanderias. Da história vem a frase "dinheiro não tem cheiro".`, `Roman emperor Vespasian created a tax on collecting urine.`, `Urine was a raw material for tanneries and laundries. That's where we get the phrase "money doesn't stink."`],
+["v33", "história", "V", `A guilhotina foi utilizada pela última vez na França em 1977.`, `A última execução foi em setembro de 1977, em Marselha. A pena de morte francesa só acabou em 1981.`, `The guillotine was last used in France in 1977.`, `The last execution took place in September 1977, in Marseille. France didn't abolish the death penalty until 1981.`],
+["v34", "história", "V", `A Universidade de Oxford é mais antiga que o Império Asteca.`, `Já havia ensino em Oxford por volta de 1096. Tenochtitlán, a capital asteca, foi fundada em 1325.`, `Oxford University is older than the Aztec Empire.`, `Teaching was already happening at Oxford around 1096. Tenochtitlan, the Aztec capital, wasn't founded until 1325.`],
+["v35", "história", "V", `A Guerra Anglo-Zanzibar durou menos de uma hora.`, `Em 27 de agosto de 1896, o conflito durou entre 38 e 45 minutos. É a guerra mais curta já registrada.`, `The Anglo-Zanzibar War lasted less than an hour.`, `On August 27, 1896, the conflict lasted between 38 and 45 minutes. It's the shortest war ever recorded.`],
+["v36", "ciência", "V", `O concreto romano possui propriedades que permitem reparar fissuras.`, `Pedaços de cal na mistura reagem com a água que entra nas rachaduras e formam novos cristais que as fecham, segundo um estudo do MIT de 2023.`, `Roman concrete has properties that let it repair its own cracks.`, `Chunks of lime in the mix react with water that seeps into cracks, forming new crystals that seal them, according to a 2023 MIT study.`],
+["v37", "natureza", "V", `Cangurus conseguem pausar o desenvolvimento de um embrião até que as condições sejam favoráveis.`, `O fenômeno se chama diapausa embrionária. O embrião fica em espera enquanto há outro filhote na bolsa ou falta comida.`, `Kangaroos can pause an embryo's development until conditions are favorable.`, `The phenomenon is called embryonic diapause. The embryo stays on hold while there's already a joey in the pouch or food is scarce.`],
+["v38", "história", "V", `As Olimpíadas já tiveram competições de pintura, escultura, arquitetura e literatura.`, `Entre 1912 e 1948, obras inspiradas no esporte disputavam medalhas olímpicas.`, `The Olympics once had competitions in painting, sculpture, architecture, and literature.`, `Between 1912 and 1948, works inspired by sport competed for Olympic medals.`],
+["v39", "história", "V", `Em 1814, uma onda gigante de cerveja invadiu as ruas de Londres e matou oito pessoas.`, `Um tonel gigante de uma cervejaria se rompeu e derrubou outros. Centenas de milhares de litros inundaram um bairro pobre vizinho.`, `In 1814, a giant wave of beer flooded the streets of London and killed eight people.`, `A giant vat at a brewery burst and knocked over others. Hundreds of thousands of liters flooded a poor neighborhood nearby.`],
+["v40", "história", "V", `Em 1752, os britânicos foram dormir no dia 2 de setembro e acordaram no dia 14.`, `O Reino Unido trocou o calendário juliano pelo gregoriano e precisou pular 11 dias de uma vez.`, `In 1752, the British went to sleep on September 2nd and woke up on the 14th.`, `The UK switched from the Julian to the Gregorian calendar and had to skip 11 days all at once.`],
+["v41", "história", "V", `Um atleta ganhou a maratona olímpica de 1904 após receber estricnina, clara de ovo e conhaque durante a corrida.`, `Thomas Hicks recebeu a mistura dos treinadores como estimulante, em St. Louis. Cruzou a linha carregado e desabou em seguida.`, `An athlete won the 1904 Olympic marathon after being given strychnine, egg whites, and brandy during the race.`, `Thomas Hicks got the mix from his trainers as a stimulant, in St. Louis. He crossed the finish line being carried and collapsed right after.`],
+["v42", "tecnologia", "V", `A primeira webcam foi criada para monitorar uma cafeteira em uma universidade.`, `Em 1991, pesquisadores de Cambridge apontaram uma câmera para a cafeteira do laboratório para não fazer a viagem à toa.`, `The first webcam was created to keep an eye on a coffee pot at a university.`, `In 1991, researchers at Cambridge pointed a camera at the lab's coffee pot so they wouldn't make the trip for nothing.`],
+["v43", "natureza", "V", `O Lago Baikal, na Rússia, contém aproximadamente 20% da água doce líquida não congelada do planeta.`, `É o lago mais profundo do mundo, com 1.642 metros, e guarda mais água que os cinco Grandes Lagos da América do Norte juntos.`, `Lake Baikal, in Russia, holds about 20% of the planet's unfrozen liquid fresh water.`, `It's the world's deepest lake, at 1,642 meters, and holds more water than all five Great Lakes of North America combined.`],
+["v44", "espaço", "V", `A distância média entre a Terra e a Lua é suficiente para colocar aproximadamente 30 Terras lado a lado.`, `São 384.400 km de distância média, e a Terra tem cerca de 12.742 km de diâmetro.`, `The average distance between Earth and the Moon is enough to fit about 30 Earths side by side.`, `It's an average distance of 384,400 km, and Earth is about 12,742 km in diameter.`],
+["v45", "história", "V", `Pierre de Coubertin, fundador dos Jogos Olímpicos modernos, ganhou uma medalha olímpica de literatura.`, `Em 1912, ele levou o ouro com o poema "Ode ao Esporte", inscrito sob pseudônimo.`, `Pierre de Coubertin, founder of the modern Olympic Games, won an Olympic medal in literature.`, `In 1912, he took gold with the poem "Ode to Sport," entered under a pseudonym.`],
+["v46", "história", "V", `Um homem abandonou uma maratona olímpica, pegou carona de carro e ainda cruzou a linha de chegada em primeiro lugar.`, `Fred Lorz, em 1904, percorreu boa parte do trajeto de carro e correu o trecho final. Quase recebeu a medalha antes de ser desmascarado.`, `A man dropped out of an Olympic marathon, hitched a car ride, and still crossed the finish line in first place.`, `Fred Lorz, in 1904, covered much of the course by car and ran only the final stretch. He nearly received the medal before being exposed.`],
+["v47", "tecnologia", "V", `A palavra "bug" já era usada na engenharia antes de ficar famosa por causa de um inseto encontrado em um computador.`, `Thomas Edison já escrevia sobre "bugs" em seus inventos em 1878. A mariposa presa no computador de Harvard é de 1947.`, `The word "bug" was already used in engineering before it became famous because of an actual insect found in a computer.`, `Thomas Edison was already writing about "bugs" in his inventions in 1878. The moth trapped in the Harvard computer dates to 1947.`],
+["v48", "história", "V", `Em 1919, uma onda de melaço invadiu as ruas de Boston, destruiu edifícios e matou 21 pessoas.`, `Um tanque com milhões de litros se rompeu. A onda tinha vários metros de altura e avançou a dezenas de quilômetros por hora.`, `In 1919, a wave of molasses flooded the streets of Boston, destroyed buildings, and killed 21 people.`, `A tank holding millions of liters burst open. The wave stood several meters tall and surged forward at dozens of kilometers per hour.`],
+["v49", "história", "V", `Em 1932, o Exército australiano mobilizou soldados e metralhadoras para combater uma população de emas. E perdeu.`, `Cerca de 20 mil emas devastavam plantações no oeste do país. As aves se dispersavam rápido demais e a operação foi encerrada sem sucesso.`, `In 1932, the Australian Army mobilized soldiers and machine guns to fight a population of emus. And lost.`, `About 20,000 emus were ravaging crops in the west of the country. The birds scattered too fast, and the operation was called off without success.`],
+["v50", "história", "V", `Em 1518, centenas de pessoas em uma cidade europeia começaram a dançar compulsivamente durante dias, sem conseguir parar.`, `Aconteceu em Estrasburgo. Começou com uma mulher e chegou a até 400 pessoas. A causa nunca foi esclarecida.`, `In 1518, hundreds of people in a European city began dancing compulsively for days, unable to stop.`, `It happened in Strasbourg. It started with one woman and grew to as many as 400 people. The cause was never explained.`],
+["v51", "história", "V", `Um homem sobreviveu à explosão da bomba atômica em Hiroshima e, três dias depois, também sobreviveu à explosão em Nagasaki.`, `Tsutomu Yamaguchi estava em Hiroshima a trabalho, voltou ferido para casa, em Nagasaki, e viveu até 2010, aos 93 anos.`, `A man survived the atomic bomb explosion in Hiroshima and, three days later, also survived the explosion in Nagasaki.`, `Tsutomu Yamaguchi was in Hiroshima on business, returned injured to his home in Nagasaki, and lived until 2010, at age 93.`],
+["v52", "história", "V", `Em 897, um papa ordenou que o cadáver de seu antecessor fosse desenterrado, vestido com roupas papais e levado a julgamento.`, `No Sínodo do Cadáver, o papa Estêvão VI julgou o corpo de Formoso. O morto foi condenado e jogado no rio Tibre.`, `In 897, a pope ordered his predecessor's corpse dug up, dressed in papal robes, and put on trial.`, `At the Cadaver Synod, Pope Stephen VI put the body of Pope Formosus on trial. The corpse was found guilty and thrown into the Tiber River.`],
+["v53", "história", "V", `A palavra "quarentena" surgiu durante a pandemia de peste negra no século 14, como referência aos 40 dias de isolamento de navios e viajantes.`, `Vem do veneziano "quaranta giorni". Portos como Ragusa e Veneza isolavam navios antes de permitir o desembarque.`, `The word "quarantine" emerged during the Black Death pandemic in the 14th century, referring to the 40 days ships and travelers were isolated.`, `It comes from the Venetian "quaranta giorni," meaning forty days. Ports like Ragusa and Venice isolated ships before allowing anyone to disembark.`],
+
+["m01", "tecnologia", "M", `A NASA gastou milhões de dólares para desenvolver uma caneta capaz de escrever no espaço, enquanto os astronautas soviéticos usavam lápis.`, `A caneta espacial foi criada por uma empresa privada, com dinheiro próprio. A NASA comprou as canetas por poucos dólares cada, e os soviéticos também compraram.`, `NASA spent millions of dollars developing a pen that could write in space, while Soviet astronauts just used pencils.`, `The space pen was created by a private company, with its own money. NASA bought the pens for a few dollars each, and the Soviets bought them too.`],
+["m02", "história", "M", `Na Idade Média, a maioria dos europeus acreditava que a Terra era plana.`, `A Terra esférica era consenso entre os letrados desde os gregos. O mito da Idade Média terraplanista se espalhou no século 19.`, `In the Middle Ages, most Europeans believed the Earth was flat.`, `A spherical Earth had been accepted by scholars since the ancient Greeks. The myth of a flat-Earth Middle Ages spread in the 19th century.`],
+["m03", "história", "M", `Os soldados romanos recebiam parte do pagamento em sal, de onde surgiu a palavra "salário".`, `Não há registro de legionários pagos em sal. A palavra "salarium" tem relação com sal, mas a explicação exata dessa origem é incerta.`, `Roman soldiers were partly paid in salt, which is where the word "salary" comes from.`, `There's no record of legionaries being paid in salt. The word "salarium" is linked to salt, but the exact origin of that connection is uncertain.`],
+["m04", "tecnologia", "M", `O primeiro computador pessoal da história foi inventado pela IBM.`, `O IBM PC é de 1981. Antes dele vieram o Kenbak-1 (1971), o Altair 8800 (1975) e o Apple II (1977).`, `The first personal computer in history was invented by IBM.`, `The IBM PC dates to 1981. Before it came the Kenbak-1 (1971), the Altair 8800 (1975), and the Apple II (1977).`],
+["m05", "ciência", "M", `Um centavo jogado do topo do Empire State Building pode matar uma pessoa na calçada.`, `A moeda é leve e achatada, e a resistência do ar limita a velocidade dela. No máximo, daria um susto e uma ardida.`, `A penny dropped from the top of the Empire State Building can kill someone on the sidewalk below.`, `The coin is light and flat, and air resistance caps its speed. At most, it would give you a scare and a sting.`],
+["m06", "natureza", "M", `Os touros ficam agressivos quando enxergam a cor vermelha.`, `Touros não distinguem o vermelho. O que os provoca é o movimento da capa.`, `Bulls get aggressive when they see the color red.`, `Bulls can't actually tell red apart from other colors. What provokes them is the movement of the cape.`],
+["m07", "história", "M", `Os antigos romanos construíam salas especiais chamadas vomitoriums para que as pessoas pudessem vomitar durante os banquetes e continuar comendo.`, `Vomitório era o corredor por onde a multidão saía de estádios e teatros. O nome vem de "despejar" gente.`, `The ancient Romans built special rooms called vomitoriums where people could throw up during banquets and keep eating.`, `A vomitorium was the passageway crowds used to exit stadiums and theaters. The name comes from "to spew out" people.`],
+["m08", "história", "M", `Napoleão Bonaparte tinha menos de 1,55 m de altura.`, `Ele media perto de 1,68 m, na média da época. A fama veio da confusão entre medidas francesas e inglesas e das caricaturas britânicas.`, `Napoleon Bonaparte stood under 5 feet 1 inch tall.`, `He actually stood close to 5 feet 6 inches, about average for his era. The myth came from a mix-up between French and English units, plus British caricatures.`],
+["m09", "espaço", "M", `A Grande Muralha da China pode ser vista facilmente a olho nu da Lua.`, `Da Lua não se distingue nenhuma construção humana. Mesmo da órbita baixa, a muralha é muito difícil de ver.`, `The Great Wall of China can easily be seen with the naked eye from the Moon.`, `No human structure can be made out from the Moon. Even from low orbit, the wall is very hard to see.`],
+["m10", "história", "M", `A expressão "OK" surgiu durante a Guerra Civil Americana, como abreviação de "0 killed".`, `"OK" apareceu em 1839, num jornal de Boston, como piada com a grafia errada "oll korrect". A Guerra Civil só começou em 1861.`, `The expression "OK" originated during the American Civil War, as an abbreviation for "0 killed."`, `"OK" first appeared in 1839, in a Boston newspaper, as a joke using the misspelling "oll korrect." The Civil War didn't start until 1861.`],
+["m11", "natureza", "M", `Peixes dourados têm uma memória de apenas três segundos.`, `Eles lembram de coisas por meses e podem ser treinados para cumprir tarefas e reconhecer horários de alimentação.`, `Goldfish have a memory span of only three seconds.`, `They remember things for months and can be trained to perform tasks and recognize feeding times.`],
+["m12", "ciência", "M", `Um raio nunca cai duas vezes no mesmo lugar.`, `O Empire State Building é atingido cerca de 20 vezes por ano.`, `Lightning never strikes the same place twice.`, `The Empire State Building gets struck about 20 times a year.`],
+["m13", "história", "M", `Albert Einstein foi reprovado em matemática quando era criança.`, `Ele sempre foi excelente em matemática e dominava cálculo aos 15 anos.`, `Albert Einstein failed math as a child.`, `He was always excellent at math and had mastered calculus by age 15.`],
+["m14", "história", "M", `Os vikings usavam capacetes com chifres durante as batalhas.`, `Nenhum capacete viking com chifres foi encontrado. A imagem vem de pinturas e figurinos de ópera do século 19.`, `Vikings wore horned helmets into battle.`, `No horned Viking helmet has ever been found. The image comes from 19th-century paintings and opera costumes.`],
+["m15", "corpo", "M", `Raspar os pelos faz com que eles cresçam mais grossos e escuros.`, `A lâmina corta o pelo na parte mais larga, e a ponta reta parece mais grossa. Estudos desde 1928 mostram que nada muda.`, `Shaving makes hair grow back thicker and darker.`, `The blade cuts hair at its widest point, so the blunt tip just looks thicker. Studies since 1928 show nothing actually changes.`],
+["m16", "natureza", "M", `Morcegos são completamente cegos e dependem exclusivamente da ecolocalização para encontrar o caminho.`, `Todos os morcegos enxergam. Muitas espécies frugívoras têm ótima visão e nem usam ecolocalização.`, `Bats are completely blind and rely solely on echolocation to find their way.`, `All bats can see. Many fruit-eating species have excellent vision and don't even use echolocation.`],
+["m17", "corpo", "M", `A língua humana possui regiões específicas para sentir cada sabor: doce na ponta, amargo no fundo e azedo nas laterais.`, `O "mapa da língua" nasceu da má interpretação de um estudo alemão de 1901. Todas as regiões com papilas sentem todos os sabores.`, `The human tongue has specific zones for each taste: sweet at the tip, bitter at the back, and sour on the sides.`, `The "tongue map" came from a misread German study from 1901. Every area with taste buds can sense every flavor.`],
+["m18", "natureza", "M", `Avestruzes enterram a cabeça na areia quando sentem medo.`, `Elas correm ou se deitam com o pescoço rente ao chão. Também baixam a cabeça para virar os ovos no ninho, que é um buraco no solo.`, `Ostriches bury their heads in the sand when they're scared.`, `They either run off or lie flat with their neck against the ground. They also lower their heads to turn the eggs in the nest, which is just a hole in the ground.`],
+["m19", "história", "M", `O famoso incêndio de Chicago, em 1871, começou quando uma vaca derrubou uma lamparina em um estábulo.`, `Um repórter admitiu anos depois que inventou a história da vaca. A causa do incêndio nunca foi determinada.`, `The famous Chicago fire of 1871 started when a cow knocked over a lantern in a barn.`, `A reporter admitted years later that he made up the cow story. The actual cause of the fire was never determined.`],
+["m20", "cultura", "M", `A palavra "sushi" significa peixe cru em japonês.`, `Sushi se refere ao arroz temperado com vinagre. Peixe cru fatiado é sashimi.`, `The word "sushi" means raw fish in Japanese.`, `"Sushi" actually refers to vinegared rice. Sliced raw fish is sashimi.`],
+["m21", "história", "M", `Na Idade Média, as pessoas tomavam banho apenas uma vez por ano, porque acreditavam que a água transmitia doenças.`, `Casas de banho públicas eram comuns nas cidades medievais. O medo da água veio depois, a partir do século 16.`, `In the Middle Ages, people bathed only once a year because they believed water spread disease.`, `Public bathhouses were common in medieval towns. The fear of water came later, starting in the 16th century.`],
+["m22", "história", "M", `Nenhuma pessoa condenada nos julgamentos das bruxas de Salem foi executada por enforcamento.`, `Dezenove condenados foram enforcados e um homem morreu esmagado por pedras. O mito é a fogueira: ninguém foi queimado em Salem.`, `None of the people condemned in the Salem witch trials were executed by hanging.`, `Nineteen convicted people were hanged, and one man was crushed to death with stones. The myth is the bonfire: no one was burned at Salem.`],
+["m23", "tecnologia", "M", `Thomas Edison inventou sozinho a primeira lâmpada elétrica funcional.`, `Outros inventores, como Humphry Davy e Joseph Swan, já tinham lâmpadas funcionando. Edison e sua equipe criaram, em 1879, uma versão durável e comercialmente viável.`, `Thomas Edison single-handedly invented the first working electric light bulb.`, `Other inventors, like Humphry Davy and Joseph Swan, already had working bulbs. In 1879, Edison and his team created a durable, commercially viable version.`],
+["m24", "espaço", "M", `O primeiro ser vivo enviado ao espaço foi um macaco.`, `Foram moscas-das-frutas, lançadas pelos Estados Unidos em 1946. O primeiro macaco subiu em 1949, e a cadela Laika orbitou a Terra em 1957.`, `The first living creature sent into space was a monkey.`, `It was fruit flies, launched by the United States in 1946. The first monkey went up in 1949, and the dog Laika orbited the Earth in 1957.`],
+["m25", "corpo", "M", `Apenas 10% do cérebro humano está em funcionamento durante as atividades cotidianas.`, `Exames de imagem mostram atividade em praticamente todo o cérebro ao longo de um dia, até durante o sono.`, `Only 10% of the human brain is active during everyday tasks.`, `Brain scans show activity across nearly the entire brain throughout the day, even during sleep.`],
+["m26", "história", "M", `O navegador Cristóvão Colombo foi o primeiro europeu a chegar às Américas.`, `O viking Leif Erikson chegou à Terra Nova, no atual Canadá, por volta do ano 1000, quase cinco séculos antes.`, `The navigator Christopher Columbus was the first European to reach the Americas.`, `The Viking Leif Erikson reached Newfoundland, in present-day Canada, around the year 1000 — almost five centuries earlier.`],
+["m27", "espaço", "M", `Os astronautas da Apollo 11 foram os primeiros seres humanos a observar a Terra inteira de uma só vez.`, `Foi a tripulação da Apollo 8, em dezembro de 1968, a primeira a se afastar o bastante para ver o planeta inteiro.`, `The Apollo 11 astronauts were the first humans to see the whole Earth at once.`, `It was the Apollo 8 crew, in December 1968, who were the first to travel far enough to see the entire planet.`],
+["m28", "história", "M", `Os antigos egípcios utilizavam camelos para transportar os blocos usados na construção das pirâmides.`, `Camelos só se tornaram comuns no Egito muitos séculos depois. Os blocos iam em trenós sobre areia molhada e em barcos pelo Nilo.`, `The ancient Egyptians used camels to haul the blocks used to build the pyramids.`, `Camels didn't become common in Egypt until many centuries later. The blocks were moved on sledges over wet sand and by boat along the Nile.`],
+["m29", "história", "M", `A Grande Muralha da China é uma construção única e contínua, que atravessa o país de ponta a ponta.`, `É um conjunto de muralhas erguidas por dinastias diferentes, com trechos paralelos, lacunas e barreiras naturais no meio.`, `The Great Wall of China is a single, continuous structure running from one end of the country to the other.`, `It's actually a collection of walls built by different dynasties, with parallel sections, gaps, and natural barriers in between.`],
+["m30", "história", "M", `O famoso explorador Marco Polo foi o primeiro europeu a chegar à China.`, `O pai e o tio dele já tinham estado na corte de Kublai Khan anos antes, e fontes chinesas registram enviados romanos no século 2.`, `The famous explorer Marco Polo was the first European to reach China.`, `His father and uncle had already visited Kublai Khan's court years earlier, and Chinese sources record Roman envoys as far back as the 2nd century.`],
+["m31", "história", "M", `Os antigos gregos esculpiam suas estátuas em mármore branco porque consideravam essa a cor mais bonita para representar seus deuses.`, `As estátuas eram pintadas com cores vivas. A tinta se perdeu com o tempo, e o ideal do mármore branco veio séculos depois.`, `The ancient Greeks carved their statues from white marble because they considered it the most beautiful color to represent their gods.`, `The statues were actually painted in bright colors. The paint faded over time, and the ideal of white marble came centuries later.`],
+["m32", "natureza", "M", `O Monte Everest é a montanha mais alta do planeta quando medido desde a base até o topo.`, `Da base ao topo, ganha o Mauna Kea, no Havaí, com mais de 10 mil metros, a maior parte debaixo d'água. O Everest é o mais alto em relação ao nível do mar.`, `Mount Everest is the tallest mountain on the planet when measured from base to peak.`, `Measured base to peak, Mauna Kea in Hawaii wins, at over 10,000 meters, most of it underwater. Everest is only the highest relative to sea level.`],
+["m34", "história", "M", `O inventor da guilhotina foi condenado à morte e executado pelo próprio aparelho que criou.`, `Joseph-Ignace Guillotin apenas propôs o método, projetado por outro médico, e morreu de causas naturais em 1814.`, `The inventor of the guillotine was sentenced to death and executed by the very device he created.`, `Joseph-Ignace Guillotin only proposed the method, which was designed by another physician, and he died of natural causes in 1814.`],
+["m35", "história", "M", `O Império Romano caiu em um único dia, quando Roma foi invadida pelos povos bárbaros.`, `A queda do lado ocidental levou gerações, com saques em 410 e 455 e o último imperador deposto em 476. O lado oriental durou até 1453.`, `The Roman Empire fell in a single day, when Rome was invaded by barbarian tribes.`, `The fall of the western half took generations, with sacks in 410 and 455 and the last emperor deposed in 476. The eastern half lasted until 1453.`],
+["m36", "história", "M", `O imperador Nero tocava violino enquanto Roma pegava fogo.`, `O violino só surgiu uns 1.500 anos depois. Segundo o historiador Tácito, Nero estava fora de Roma e voltou para organizar o socorro.`, `Emperor Nero played the violin while Rome burned.`, `The violin wasn't invented until about 1,500 years later. According to the historian Tacitus, Nero was away from Rome and returned to organize relief efforts.`],
+["m37", "história", "M", `A Biblioteca de Alexandria foi destruída completamente em uma única noite, quando Júlio César incendiou a cidade.`, `O incêndio de 48 a.C. atingiu parte do acervo, mas a biblioteca seguiu funcionando e definhou ao longo de séculos, por falta de verba e conflitos.`, `The Library of Alexandria was completely destroyed in a single night, when Julius Caesar set the city on fire.`, `The 48 BC fire damaged part of the collection, but the library kept operating and declined over centuries from lack of funding and conflict.`],
+["m38", "história", "M", `Os vikings bebiam cerveja em copos feitos de crânios de seus inimigos.`, `O mito nasceu de um erro de tradução no século 17: um poema falava em chifres de animais usados como copos.`, `Vikings drank beer out of cups made from their enemies' skulls.`, `The myth came from a mistranslation in the 17th century: a poem actually referred to animal horns used as drinking cups.`],
+["m39", "ciência", "M", `Albert Einstein ganhou o Prêmio Nobel de Física por desenvolver a teoria da relatividade.`, `O Nobel de 1921 foi pela explicação do efeito fotoelétrico. A relatividade ainda era considerada polêmica demais.`, `Albert Einstein won the Nobel Prize in Physics for developing the theory of relativity.`, `The 1921 Nobel was for his explanation of the photoelectric effect. Relativity was still considered too controversial.`],
+["m40", "história", "M", `Os cintos de castidade eram objetos comuns usados por mulheres medievais para impedir relações sexuais enquanto seus maridos viajavam.`, `Não há evidência confiável de uso na Idade Média. A maioria das peças em museus foi fabricada nos séculos 18 e 19.`, `Chastity belts were common items worn by medieval women to prevent sex while their husbands traveled.`, `There's no reliable evidence they were used in the Middle Ages. Most of the pieces found in museums were actually made in the 18th and 19th centuries.`],
+["m41", "corpo", "M", `Engolir um chiclete faz com que ele permaneça no estômago durante sete anos.`, `A goma não é digerida, mas atravessa o sistema digestivo e sai em poucos dias, como qualquer outra coisa.`, `Swallowing gum makes it stay in your stomach for seven years.`, `Gum isn't digested, but it passes through your digestive system and comes out within days, like anything else you eat.`],
+["m42", "corpo", "M", `Comer cenoura melhora a visão noturna e permite enxergar melhor no escuro.`, `O mito foi espalhado pela propaganda britânica na Segunda Guerra para esconder o uso do radar. A vitamina A só ajuda quem tem carência dela.`, `Eating carrots improves night vision and lets you see better in the dark.`, `The myth was spread by British propaganda in World War II to hide the use of radar. Vitamin A only helps people who are actually deficient in it.`],
+["m43", "corpo", "M", `Sair de casa com o cabelo molhado em um dia frio pode fazer você pegar um resfriado.`, `Resfriado é causado por vírus. Sem contato com um deles, cabelo molhado só dá frio.`, `Going outside with wet hair on a cold day can give you a cold.`, `A cold is caused by a virus. Without exposure to one, wet hair just makes you feel cold.`],
+["m44", "corpo", "M", `Beber álcool ajuda a aquecer o corpo quando está muito frio.`, `O álcool dilata os vasos da pele e dá sensação de calor, mas faz o corpo perder temperatura mais rápido.`, `Drinking alcohol helps warm up your body when it's very cold out.`, `Alcohol dilates the blood vessels in your skin, creating a feeling of warmth, but it actually makes your body lose heat faster.`],
+["m45", "corpo", "M", `Estalar os dedos com frequência provoca artrite nas articulações.`, `O estalo é gás se movendo no líquido da articulação. Um médico estalou os dedos de uma só mão por mais de 60 anos e não achou diferença entre as duas.`, `Cracking your knuckles often causes arthritis in the joints.`, `That popping sound is just gas moving in the joint fluid. One doctor cracked the knuckles on only one hand for over 60 years and found no difference between the two.`],
+["m46", "corpo", "M", `Comer muito açúcar deixa as crianças hiperativas.`, `Estudos controlados não encontram diferença de comportamento. O que muda é a expectativa dos pais, e o ambiente de festa faz o resto.`, `Eating too much sugar makes children hyperactive.`, `Controlled studies find no difference in behavior. What changes is parents' expectations, and the excitement of a party does the rest.`],
+["m47", "corpo", "M", `É possível engolir a própria língua durante uma convulsão.`, `A língua está presa ao assoalho da boca. O certo é deitar a pessoa de lado e nunca colocar nada na boca dela.`, `It's possible to swallow your own tongue during a seizure.`, `The tongue is attached to the floor of the mouth. The right move is to lay the person on their side and never put anything in their mouth.`],
+["m48", "natureza", "M", `Uma pessoa engole, em média, oito aranhas por ano enquanto dorme.`, `Não existe nenhum registro disso. Para uma aranha, uma pessoa dormindo é um animal enorme que respira e vibra, algo a evitar.`, `On average, a person swallows eight spiders a year while sleeping.`, `There's no record of this ever happening. To a spider, a sleeping person is a huge animal that breathes and vibrates — something to avoid.`],
+["m49", "natureza", "M", `Se você tocar em um filhote de passarinho, a mãe vai abandoná-lo por causa do cheiro humano.`, `A maioria das aves tem olfato fraco e não abandona a cria por causa de cheiro. Ainda assim, o melhor é mexer o mínimo possível.`, `If you touch a baby bird, its mother will abandon it because of the human scent.`, `Most birds have a weak sense of smell and won't abandon their young over a scent. Still, it's best to handle them as little as possible.`],
+["m50", "corpo", "M", `Ler no escuro ou com pouca iluminação pode estragar permanentemente a visão.`, `A pouca luz cansa os olhos e pode dar dor de cabeça, mas o efeito passa com descanso.`, `Reading in the dark or in low light can permanently damage your eyesight.`, `Dim light strains your eyes and can cause headaches, but the effect wears off with rest.`],
+["v54", "história", "V", `Em 1989, a Pepsi recebeu da União Soviética 17 submarinos e três navios de guerra como pagamento por refrigerante.`, `Sem moeda forte para pagar, os soviéticos entregaram navios velhos. A Pepsi revendeu tudo como sucata.`, `In 1989, Pepsi received 17 submarines and three warships from the Soviet Union as payment for soda.`, `With no hard currency to pay, the Soviets handed over old ships instead. Pepsi resold all of it as scrap.`],
+["v55", "história", "V", `A Nintendo foi fundada antes do fim do Império Otomano.`, `A Nintendo nasceu em 1889, fabricando cartas de baralho. O Império Otomano só acabou em 1922.`, `Nintendo was founded before the Ottoman Empire came to an end.`, `Nintendo was founded in 1889, making playing cards. The Ottoman Empire didn't end until 1922.`],
+["v56", "tecnologia", "V", `O fax foi inventado antes do telefone.`, `A primeira patente de um aparelho de fax é de 1843. O telefone só foi patenteado em 1876.`, `The fax machine was invented before the telephone.`, `The first fax machine patent dates to 1843. The telephone wasn't patented until 1876.`],
+["v57", "tecnologia", "V", `O isqueiro foi inventado antes do fósforo.`, `Um isqueiro químico, a lâmpada de Döbereiner, é de 1823. O fósforo de fricção apareceu em 1826.`, `The lighter was invented before the match.`, `A chemical lighter, the Döbereiner lamp, dates to 1823. The friction match appeared in 1826.`],
+["v58", "história", "V", `Ainda existiam mamutes vivos quando a Grande Pirâmide de Gizé ficou pronta.`, `Uma população isolada sobreviveu numa ilha do Ártico até cerca de 2000 a.C. A pirâmide é de cerca de 2560 a.C.`, `Woolly mammoths were still alive when the Great Pyramid of Giza was completed.`, `An isolated population survived on an Arctic island until about 2000 BC. The pyramid dates to around 2560 BC.`],
+["v59", "história", "V", `Anne Frank e Martin Luther King nasceram no mesmo ano.`, `Os dois nasceram em 1929. Ela morreu em 1945, e ele ficou conhecido nos anos 1950 e 1960.`, `Anne Frank and Martin Luther King Jr. were born in the same year.`, `Both were born in 1929. She died in 1945, while he rose to fame in the 1950s and 60s.`],
+["v60", "história", "V", `Em 2007, o exército da Suíça invadiu Liechtenstein por engano.`, `Cerca de 170 soldados se perderam à noite num treino e cruzaram a fronteira. A Suíça pediu desculpas, e Liechtenstein disse que não havia problema.`, `In 2007, the Swiss army accidentally invaded Liechtenstein.`, `About 170 soldiers got lost at night during a training exercise and crossed the border. Switzerland apologized, and Liechtenstein said it was no big deal.`],
+["v61", "esporte", "V", `Em 1923, um jóquei venceu uma corrida de cavalos depois de morto.`, `Frank Hayes sofreu um infarto no meio da prova, em Nova York, e o cavalo cruzou a linha em primeiro com ele ainda na sela.`, `In 1923, a jockey won a horse race after dying mid-race.`, `Frank Hayes had a heart attack partway through the race in New York, and the horse crossed the finish line first with him still in the saddle.`],
+["v62", "história", "V", `A Austrália batizou uma piscina pública com o nome de um primeiro-ministro que desapareceu nadando no mar.`, `Harold Holt sumiu numa praia em 1967 e nunca foi encontrado. Um centro aquático em Melbourne leva o nome dele.`, `Australia named a public pool after a prime minister who vanished while swimming in the sea.`, `Harold Holt disappeared at a beach in 1967 and was never found. A swimming center in Melbourne is named after him.`],
+["v63", "história", "V", `Em 1961, um bombardeiro americano deixou cair duas bombas de hidrogênio sobre a Carolina do Norte.`, `O avião se partiu no ar. As bombas não explodiram, mas numa delas quase todos os mecanismos de segurança falharam.`, `In 1961, an American bomber dropped two hydrogen bombs over North Carolina.`, `The plane broke apart in midair. The bombs didn't explode, but on one of them, nearly every safety mechanism failed.`],
+["v64", "história", "V", `Em 1983, o sistema de alerta soviético acusou um ataque nuclear dos Estados Unidos. O oficial de plantão achou que era erro, não repassou o aviso, e estava certo.`, `Stanislav Petrov desconfiou porque o sistema mostrava poucos mísseis. Era o reflexo do sol nas nuvens confundindo um satélite.`, `In 1983, the Soviet warning system flagged a US nuclear attack. The officer on duty figured it was a glitch, didn't pass on the alert, and he was right.`, `Stanislav Petrov grew suspicious because the system showed too few missiles. It was sunlight reflecting off clouds confusing a satellite.`],
+["v65", "história", "V", `Nos anos 1960, a CIA implantou um microfone em um gato para espionar soviéticos.`, `O projeto se chamava Acoustic Kitty e custou milhões. Foi abandonado porque o gato não ia para onde mandavam.`, `In the 1960s, the CIA implanted a microphone in a cat to spy on the Soviets.`, `The project was called Acoustic Kitty and cost millions. It was scrapped because the cat wouldn't go where it was told.`],
+["v66", "espaço", "V", `Os Estados Unidos tiveram um plano para detonar uma bomba nuclear na Lua.`, `O Projeto A119, de 1958, queria um clarão visível da Terra para impressionar os soviéticos. Foi cancelado.`, `The United States had a plan to detonate a nuclear bomb on the Moon.`, `Project A119, from 1958, aimed for a flash visible from Earth to impress the Soviets. It was scrapped.`],
+["v67", "história", "V", `Um soldado japonês continuou lutando a Segunda Guerra até 1974.`, `Hiroo Onoda ficou escondido na selva das Filipinas, sem acreditar que a guerra tinha acabado. Só se rendeu quando o antigo comandante foi buscá-lo.`, `One Japanese soldier kept fighting World War II until 1974.`, `Hiroo Onoda stayed hidden in the jungles of the Philippines, refusing to believe the war was over. He only surrendered when his old commander came to get him.`],
+["v68", "bar", "V", `Durante a Lei Seca, o governo americano envenenou álcool de propósito, e milhares de pessoas morreram.`, `O álcool industrial era desviado para fazer bebida. O governo mandou acrescentar substâncias tóxicas para desencorajar o consumo.`, `During Prohibition, the US government deliberately poisoned alcohol, and thousands of people died.`, `Industrial alcohol was being diverted to make liquor. The government had toxic substances added to it to discourage drinking.`],
+["v69", "história", "V", `Stálin foi indicado duas vezes ao Prêmio Nobel da Paz.`, `As indicações são de 1945 e 1948, pelo papel dele no fim da Segunda Guerra. Não ganhou.`, `Stalin was nominated twice for the Nobel Peace Prize.`, `The nominations came in 1945 and 1948, for his role in ending World War II. He didn't win.`],
+["v70", "história", "V", `Catorze anos antes do Titanic, um romance descreveu um transatlântico chamado Titan afundando ao bater em um iceberg.`, `O livro é de 1898. O navio da ficção também era considerado inafundável e também tinha poucos botes.`, `Fourteen years before the Titanic, a novel described an ocean liner called the Titan sinking after hitting an iceberg.`, `The book came out in 1898. The fictional ship was also considered unsinkable, and it also carried too few lifeboats.`],
+["v71", "história", "V", `Uma mesma mulher estava a bordo do Titanic, do navio-irmão que afundou e do outro navio-irmão que sofreu uma colisão. Sobreviveu aos três.`, `Violet Jessop era camareira e enfermeira. Passou pelo Olympic em 1911, pelo Titanic em 1912 e pelo Britannic em 1916.`, `One woman was aboard the Titanic, its sister ship that sank, and the other sister ship that survived a collision. She lived through all three.`, `Violet Jessop was a stewardess and nurse. She was on the Olympic in 1911, the Titanic in 1912, and the Britannic in 1916.`],
+["v72", "bar", "V", `Canadá e Dinamarca disputaram uma ilha por décadas deixando garrafas de bebida um para o outro.`, `Na ilha Hans, cada lado fincava sua bandeira e deixava uma garrafa de uísque ou de aguardente. Em 2022, dividiram a ilha ao meio.`, `Canada and Denmark feuded over an island for decades by leaving each other bottles of liquor.`, `On Hans Island, each side would plant its flag and leave a bottle of whisky or schnapps. In 2022, they split the island in half.`],
+["v73", "esporte", "V", `Em 1969, El Salvador e Honduras entraram em guerra depois de jogos das eliminatórias da Copa.`, `A tensão entre os países já era antiga, e os jogos foram o estopim. A Guerra do Futebol durou cerca de 100 horas.`, `In 1969, El Salvador and Honduras went to war after World Cup qualifying matches.`, `Tensions between the countries ran deep already, and the matches were the spark. The Football War lasted about 100 hours.`],
+["v74", "história", "V", `Na Europa medieval, porcos e ratos foram julgados em tribunal, com direito a advogado.`, `Há registros de porcos condenados e executados por matar crianças, e de ratos intimados por destruir plantações.`, `In medieval Europe, pigs and rats were put on trial in court, with a right to a lawyer.`, `There are records of pigs convicted and executed for killing children, and of rats summoned for destroying crops.`],
+["v75", "história", "V", `Antes do despertador, havia gente paga para bater na janela dos outros e acordá-los.`, `Na Inglaterra industrial, esses profissionais usavam varas compridas ou zarabatanas com ervilhas secas.`, `Before the alarm clock, people were paid to knock on others' windows to wake them up.`, `In industrial England, these professionals used long poles or blowpipes loaded with dried peas.`],
+["v76", "tabu", "V", `Na Inglaterra, maridos vendiam as esposas em leilão público até o século 19.`, `Como o divórcio era caro demais, a venda servia como separação informal. Muitas vezes o comprador já estava combinado.`, `In England, husbands auctioned off their wives in public until the 19th century.`, `Since divorce was too expensive, the sale served as an informal separation. The buyer was often arranged in advance.`],
+["v77", "história", "V", `Napoleão já foi atacado por uma multidão de coelhos e teve de recuar.`, `Para uma caçada em 1807, soltaram centenas de coelhos criados em cativeiro. Em vez de fugir, eles correram para cima dele atrás de comida.`, `Napoleon was once attacked by a mob of rabbits and had to retreat.`, `For a 1807 hunt, hundreds of captive-bred rabbits were released. Instead of fleeing, they charged at him looking for food.`],
+["v78", "ciência", "V", `Cerca de 1 em cada 200 homens no mundo carrega uma linhagem masculina atribuída a Gêngis Khan.`, `Um estudo genético de 2003 encontrou o mesmo cromossomo Y em milhões de homens da Ásia; pesquisas mais recentes sugerem que o número real de descendentes pode ser menor do que se pensava.`, `About 1 in every 200 men in the world carries a male lineage traced to Genghis Khan.`, `A 2003 genetic study linked this estimate to a lineage common across Asia; more recent research suggests the real number of descendants may be much smaller.`],
+["v79", "cultura", "V", `O jogo Banco Imobiliário nasceu como crítica ao capitalismo.`, `A americana Lizzie Magie criou o jogo em 1904 para mostrar como os donos de terras enriquecem às custas dos inquilinos.`, `Monopoly was created as a critique of capitalism.`, `American Lizzie Magie invented the game in 1904 to show how landlords get rich at tenants' expense.`],
+["v80", "natureza", "V", `Uma galinha viveu 18 meses sem cabeça.`, `Em 1945, nos Estados Unidos, o corte poupou a base do cérebro. O dono alimentava a ave com um conta-gotas e a exibia em feiras.`, `A chicken lived for 18 months without a head.`, `In 1945, in the United States, the cut spared the base of the brain. The owner fed the bird with an eyedropper and put it on display at fairs.`],
+["v81", "tabu", "V", `A heroína foi vendida pela Bayer como xarope para tosse.`, `A partir de 1898, era anunciada como alternativa à morfina que não viciava, inclusive para crianças.`, `Heroin was sold by Bayer as a cough syrup.`, `Starting in 1898, it was marketed as a non-addictive alternative to morphine, even for children.`],
+["v82", "bar", "V", `O ketchup já foi vendido como remédio.`, `Na década de 1830, um médico americano vendia pílulas de tomate contra indigestão e diarreia.`, `Ketchup was once sold as medicine.`, `In the 1830s, an American doctor sold tomato pills for indigestion and diarrhea.`],
+["v83", "tabu", "V", `O Viagra foi descoberto por acaso, em testes de um remédio para o coração.`, `O remédio não funcionou bem para a dor no peito, mas os voluntários relataram um efeito colateral inesperado.`, `Viagra was discovered by accident, during trials for a heart medication.`, `The drug didn't work well for chest pain, but volunteers reported an unexpected side effect.`],
+["v84", "tabu", "V", `A motosserra foi inventada para ajudar em partos.`, `No século 18, médicos escoceses criaram uma serra de corrente manual para cortar o osso da bacia em partos difíceis.`, `The chainsaw was invented to help with childbirth.`, `In the 18th century, Scottish doctors created a hand-cranked chain saw to cut through pelvic bone in difficult deliveries.`],
+["v85", "tabu", "V", `No Egito Antigo, fezes de crocodilo eram usadas como contraceptivo.`, `A receita aparece num papiro médico de quase 4 mil anos, misturada com mel.`, `In Ancient Egypt, crocodile dung was used as a contraceptive.`, `The recipe appears in a medical papyrus nearly 4,000 years old, mixed with honey.`],
+["v86", "tabu", "V", `Um papa escreveu um romance erótico antes de assumir o cargo.`, `O futuro Pio II publicou em 1444 a história de dois amantes, que fez sucesso na Europa. Virou papa 14 anos depois.`, `A pope wrote an erotic novel before taking office.`, `The future Pope Pius II published the story of two lovers in 1444, which was a hit across Europe. He became pope 14 years later.`],
+["v87", "tabu", "V", `Mozart compôs uma música chamada "Lamba meu cu".`, `É um cânone de 1782, feito para cantar com amigos. Depois da morte dele, editores trocaram a letra.`, `Mozart wrote a song called "Leck mich im Arsch" — "Lick Me in the Arse."`, `It's a canon from 1782, meant to be sung with friends. After his death, editors swapped out the lyrics.`],
+["v88", "tabu", "V", `A OMS só retirou a homossexualidade da lista de doenças em 1990.`, `A decisão é de 17 de maio de 1990, data que virou o dia internacional contra a homofobia.`, `The WHO didn't remove homosexuality from its list of diseases until 1990.`, `The decision was made on May 17, 1990, a date that became International Day Against Homophobia.`],
+["v89", "tabu", "V", `Na Islândia, existe um aplicativo para conferir se a pessoa com quem você vai ficar é sua parente.`, `O país é pequeno e quase todo mundo tem ancestrais em comum. O aplicativo, de 2013, consulta um banco de dados genealógico.`, `In Iceland, there's an app to check whether the person you're about to hook up with is your relative.`, `The country is small, and nearly everyone shares common ancestors. The app, from 2013, checks against a genealogy database.`],
+["v90", "história", "V", `Até o século 20, existiu uma tinta marrom feita de múmias egípcias moídas.`, `A cor era apreciada por pintores europeus. Um fabricante inglês só parou de produzi-la quando o estoque de múmias acabou.`, `Until the 20th century, there was a brown paint made from ground-up Egyptian mummies.`, `The color was prized by European painters. An English manufacturer only stopped making it when they ran out of mummies.`],
+["v91", "espaço", "V", `Há quase cem sacos de fezes, urina e vômito de astronautas deixados na Lua.`, `As missões Apollo largaram 96 sacos para aliviar o peso na volta. Cientistas querem estudá-los para saber se algo sobreviveu.`, `There are nearly a hundred bags of astronaut feces, urine, and vomit left on the Moon.`, `The Apollo missions left behind 96 bags to lighten the load for the trip back. Scientists want to study them to see if anything survived.`],
+["v92", "bar", "V", `Existe uma nuvem gigante de álcool flutuando no espaço.`, `Perto do centro da nossa galáxia, uma nuvem de gás contém álcool em quantidade muito maior que todos os oceanos da Terra.`, `There's a giant cloud of alcohol floating in space.`, `Near the center of our galaxy, a gas cloud contains far more alcohol than all of Earth's oceans combined.`],
+["v93", "espaço", "V", `Plutão ainda não completou uma volta ao redor do Sol desde que foi descoberto.`, `Foi descoberto em 1930 e leva 248 anos para dar uma volta. O primeiro aniversário será em 2178.`, `Pluto hasn't yet completed a single orbit around the Sun since it was discovered.`, `It was discovered in 1930 and takes 248 years to complete one orbit. Its first anniversary will be in 2178.`],
+["v94", "história", "V", `O cérebro de Einstein foi retirado sem autorização e guardado em potes por décadas pelo médico que fez a autópsia.`, `O patologista ficou com o cérebro em 1955 e o levou consigo de cidade em cidade, cortado em pedaços.`, `Einstein's brain was removed without permission and kept in jars for decades by the doctor who performed the autopsy.`, `The pathologist took the brain in 1955 and carried it with him from city to city, cut into pieces.`],
+["v95", "brasil", "V", `O Rio de Janeiro já foi a capital de Portugal.`, `Com a fuga da corte de Napoleão, o Rio foi a sede do reino português de 1808 a 1821.`, `Rio de Janeiro was once the capital of Portugal.`, `After the royal court fled Napoleon, Rio served as the seat of the Portuguese kingdom from 1808 to 1821.`],
+["v96", "brasil", "V", `O Acre já foi um país independente.`, `Em 1899, um aventureiro espanhol apoiado por colonos brasileiros proclamou a República do Acre em terras da Bolívia. A região passou ao Brasil em 1903.`, `Acre was once an independent country.`, `In 1899, a Spanish adventurer backed by Brazilian settlers proclaimed the Republic of Acre on land belonging to Bolivia. The region became part of Brazil in 1903.`],
+["v97", "brasil", "V", `A maior fronteira terrestre da França é com o Brasil.`, `São cerca de 730 km entre o Amapá e a Guiana Francesa, mais do que a fronteira francesa com a Espanha.`, `France's longest land border is with Brazil.`, `It runs about 730 km between Amapá and French Guiana, longer than France's border with Spain.`],
+["v98", "brasil", "V", `Até 1962, a mulher casada no Brasil precisava da autorização do marido para trabalhar.`, `O Código Civil tratava a mulher casada como relativamente incapaz. Isso só mudou com o Estatuto da Mulher Casada.`, `Until 1962, married women in Brazil needed their husband's permission to work.`, `The Civil Code treated married women as having limited legal capacity. That only changed with the Married Women's Statute.`],
+["v99", "história", "V", `O Sudão tem mais pirâmides do que o Egito.`, `São mais de 200, construídas pelos reis da Núbia. São menores e mais pontudas que as egípcias.`, `Sudan has more pyramids than Egypt.`, `There are over 200, built by the kings of Nubia. They're smaller and pointier than Egypt's.`],
+["v100", "portugal", "V", `A livraria mais antiga do mundo ainda em funcionamento fica em Lisboa.`, `A Bertrand do Chiado funciona desde 1732 e tem o recorde reconhecido pelo Guinness.`, `The world's oldest bookstore still in operation is in Lisbon.`, `Bertrand in Chiado has been open since 1732 and holds the Guinness World Record.`],
+["v101", "cultura", "V", `A Lego é a maior fabricante de pneus do mundo.`, `Em número de unidades, nenhuma fábrica faz tantos: são centenas de milhões de pneuzinhos por ano.`, `Lego is the world's biggest tire manufacturer.`, `By unit count, no factory makes more: hundreds of millions of tiny tires a year.`],
+["v102", "cultura", "V", `O salto alto foi criado para homens.`, `Cavaleiros persas usavam salto para firmar o pé no estribo. Na Europa, virou moda entre nobres como Luís XIV.`, `High heels were invented for men.`, `Persian horsemen wore heels to keep their feet secure in the stirrups. In Europe, they became fashionable among nobles like Louis XIV.`],
+["v103", "cultura", "V", `No início do século 20, revistas de moda recomendavam rosa para meninos e azul para meninas.`, `O rosa era visto como cor mais forte, e o azul, como mais delicada. A convenção atual só se firmou nos anos 1940.`, `In the early 20th century, fashion magazines recommended pink for boys and blue for girls.`, `Pink was seen as the stronger color, and blue as more delicate. Today's convention didn't take hold until the 1940s.`],
+["v104", "história", "V", `Em 1925, um golpista vendeu a Torre Eiffel como sucata a um comerciante de ferro-velho.`, `Victor Lustig se passou por funcionário do governo francês. A vítima teve vergonha de dar queixa.`, `In 1925, a con artist sold the Eiffel Tower as scrap metal to a junk dealer.`, `Victor Lustig posed as a French government official. The victim was too embarrassed to file a complaint.`],
+["v105", "bar", "V", `O livro Guinness dos recordes foi criado pela cervejaria para resolver discussões de bar.`, `A ideia veio do diretor da Guinness, depois de uma discussão sobre qual era a ave de caça mais rápida da Europa. O livro saiu em 1955.`, `The Guinness World Records book was created by the brewery to settle bar arguments.`, `The idea came from the Guinness managing director, after a debate about which was the fastest game bird in Europe. The book came out in 1955.`],
+["v106", "bar", "V", `A Fanta foi criada na Alemanha nazista, quando a filial local da Coca-Cola ficou sem xarope.`, `Em 1940, com a importação cortada pela guerra, o chefe da filial inventou um refrigerante com sobras como soro de leite e bagaço de maçã.`, `Fanta was invented in Nazi Germany, after the local Coca-Cola branch ran out of syrup.`, `In 1940, with imports cut off by the war, the branch's boss invented a soda from leftovers like whey and apple pulp.`],
+["v107", "bar", "V", `Na Rússia, a cerveja só passou a ser considerada bebida alcoólica por lei em 2011.`, `Até então, qualquer bebida com menos de 10% de álcool era classificada como alimento e vendida em quiosques de rua.`, `In Russia, beer wasn't legally classified as alcohol until 2011.`, `Until then, anything under 10% alcohol counted as food and was sold at street kiosks.`],
+["v108", "bar", "V", `Monges alemães criaram uma cerveja extraforte para aguentar o jejum da Quaresma e a chamavam de pão líquido.`, `No século 17, em Munique, os monges não podiam comer, mas podiam beber. O estilo de cerveja que criaram existe até hoje.`, `German monks brewed an extra-strong beer to survive Lent fasting, and called it liquid bread.`, `In 17th-century Munich, monks couldn't eat, but they could drink. The beer style they created still exists today.`],
+["v109", "bar", "V", `O gim-tônica nasceu como remédio contra a malária.`, `Soldados britânicos na Índia misturavam gim para disfarçar o amargo do quinino da água tônica.`, `Gin and tonic was invented as a malaria treatment.`, `British soldiers in India mixed gin in to mask the bitterness of the quinine in tonic water.`],
+["v110", "bar", "V", `A pressão dentro de uma garrafa de champanhe é mais que o dobro da pressão de um pneu de carro.`, `Por isso a garrafa é tão grossa, e a rolha pode sair a dezenas de quilômetros por hora.`, `The pressure inside a champagne bottle is more than double that of a car tire.`, `That's why the bottle is so thick, and why the cork can fly out at dozens of miles per hour.`],
+["v111", "bar", "V", `Os trabalhadores das pirâmides do Egito recebiam parte do pagamento em cerveja.`, `A ração diária incluía pão e alguns litros de uma cerveja grossa e nutritiva.`, `The workers who built Egypt's pyramids were partly paid in beer.`, `Their daily ration included bread and a few liters of a thick, nutritious beer.`],
+["v112", "cultura", "V", `A Samsung começou vendendo peixe seco e macarrão.`, `Foi fundada em 1938 como uma mercearia de exportação. Só entrou na eletrônica nos anos 1960.`, `Samsung started out selling dried fish and noodles.`, `It was founded in 1938 as an export grocery store. It only got into electronics in the 1960s.`],
+["v113", "cultura", "V", `A Lamborghini fabricava tratores antes de fazer carros esportivos.`, `Ferruccio Lamborghini enriqueceu com tratores e só passou aos carros em 1963, segundo a lenda depois de uma briga com Enzo Ferrari.`, `Lamborghini used to build tractors before it made sports cars.`, `Ferruccio Lamborghini made his fortune in tractors and only moved into cars in 1963, legend says after a falling-out with Enzo Ferrari.`],
+["v114", "cultura", "V", `O logotipo do Chupa Chups foi desenhado por Salvador Dalí.`, `O pintor fez o desenho em 1969 e sugeriu colocá-lo no topo da embalagem, para ficar sempre visível.`, `The Chupa Chups logo was designed by Salvador Dalí.`, `The painter drew it in 1969 and suggested putting it on top of the wrapper, so it would always be visible.`],
+["v115", "portugal", "V", `As fronteiras de Portugal continental são praticamente as mesmas desde 1297.`, `Foram fixadas no Tratado de Alcanizes, com Castela, e estão entre as mais antigas da Europa.`, `Mainland Portugal's borders have stayed almost the same since 1297.`, `They were set by the Treaty of Alcañices, with Castile, and are among the oldest in Europe.`],
+["v116", "portugal", "V", `Foi uma princesa portuguesa que lançou a moda de beber chá na Inglaterra.`, `Catarina de Bragança casou com o rei inglês em 1662 e levou o hábito para a corte.`, `It was a Portuguese princess who started the fashion of drinking tea in England.`, `Catherine of Braganza married the English king in 1662 and brought the habit to court.`],
+["v117", "portugal", "V", `A tempura japonesa tem origem portuguesa.`, `Missionários portugueses levaram ao Japão, no século 16, o costume de fritar legumes empanados.`, `Japanese tempura has Portuguese roots.`, `In the 16th century, Portuguese missionaries introduced the practice of deep-frying battered vegetables to Japan.`],
+["v118", "brasil", "V", `Curitiba já foi a capital do Brasil por três dias.`, `Em março de 1969, durante a ditadura, o presidente transferiu o governo para a cidade de forma simbólica.`, `Curitiba was once the capital of Brazil, for three days.`, `In March 1969, during the dictatorship, the president moved the government there as a symbolic gesture.`],
+["v119", "brasil", "V", `D. Pedro II foi uma das primeiras pessoas do mundo a falar ao telefone e instalou a novidade no Brasil no ano seguinte.`, `Ele conheceu Graham Bell numa exposição nos Estados Unidos, em 1876, e teria exclamado: "Meu Deus, isto fala!".`, `Dom Pedro II was one of the first people in the world to talk on a telephone, and had one installed in Brazil the following year.`, `He met Graham Bell at an exhibition in the United States in 1876, and is said to have exclaimed, "My God, it talks!"`],
+["v120", "brasil", "V", `O Brasil foi o segundo país do mundo a emitir selos postais, logo depois da Inglaterra.`, `Os selos olho-de-boi são de 1843, três anos depois do primeiro selo inglês.`, `Brazil was the second country in the world to issue postage stamps, right after England.`, `The "bull's-eye" stamps date from 1843, three years after the first English stamp.`],
+["v121", "brasil", "V", `Henry Ford construiu uma cidade americana no meio da Amazônia, com casas de madeira, hidrantes e proibição de álcool.`, `Fordlândia, no Pará, foi fundada em 1928 para produzir borracha. O projeto fracassou, e Ford nunca pisou lá.`, `Henry Ford built an American town deep in the Amazon, complete with wooden houses, fire hydrants, and a ban on alcohol.`, `Fordlândia, in Pará, was founded in 1928 to produce rubber. The project failed, and Ford never once set foot there.`],
+["v122", "esporte", "V", `A taça da Copa do Mundo foi roubada no Rio de Janeiro em 1983 e nunca mais apareceu.`, `A Jules Rimet, que o Brasil ganhou em definitivo em 1970, foi levada da sede da confederação. Acredita-se que tenha sido derretida.`, `The World Cup trophy was stolen in Rio de Janeiro in 1983 and never recovered.`, `The Jules Rimet trophy, which Brazil won outright in 1970, was taken from the confederation's headquarters. It's believed to have been melted down.`],
+["v123", "brasil", "V", `Natal, no Rio Grande do Norte, fica mais perto da África do que do Acre.`, `De Natal à costa africana são cerca de 2.900 km em linha reta. Até Rio Branco, a capital do Acre, são cerca de 3.600.`, `Natal, in Rio Grande do Norte, is closer to Africa than it is to Acre.`, `In a straight line, it's about 2,900 km from Natal to the African coast. To Rio Branco, the capital of Acre, it's about 3,600 km.`],
+["v124", "história", "V", `A bandeira de Moçambique tem um fuzil AK-47.`, `A arma aparece cruzada com uma enxada sobre um livro, simbolizando a luta pela independência.`, `Mozambique's flag features an AK-47 rifle.`, `The rifle crosses a hoe over a book, symbolizing the struggle for independence.`],
+["v125", "esporte", "V", `Um jogo de futebol já terminou 149 a 0, com todos os gols contra.`, `Em Madagascar, em 2002, um time marcou contra a própria meta o jogo inteiro, em protesto contra a arbitragem.`, `One soccer match ended 149 to 0, with every single goal an own goal.`, `In Madagascar in 2002, one team scored on its own goal for the entire match, in protest of the referee's calls.`],
+["v126", "esporte", "V", `As Olimpíadas já tiveram prova de tiro ao pombo com pombos vivos.`, `Foi em Paris, em 1900. Cerca de 300 aves foram mortas, e a prova nunca mais se repetiu.`, `The Olympics once had a live pigeon shooting event.`, `It happened in Paris in 1900. About 300 birds were killed, and the event was never held again.`],
+["v127", "esporte", "V", `O cabo de guerra já foi esporte olímpico.`, `Fez parte do programa de 1900 a 1920.`, `Tug of war used to be an Olympic sport.`, `It was on the program from 1900 to 1920.`],
+["v128", "história", "V", `Ricardo Coração de Leão, rei da Inglaterra, mal falava inglês e passou só alguns meses do reinado no país.`, `Ele cresceu na França, falava francês e passou quase todo o reinado em cruzadas e guerras no continente.`, `Richard the Lionheart, king of England, barely spoke English and spent only a few months of his reign in the country.`, `He grew up in France, spoke French, and spent almost his whole reign on crusades and wars on the continent.`],
+["v129", "história", "V", `A Guerra dos Cem Anos durou 116 anos.`, `Foi de 1337 a 1453, com várias tréguas no meio. O nome foi dado por historiadores, séculos depois.`, `The Hundred Years' War actually lasted 116 years.`, `It ran from 1337 to 1453, with several truces along the way. The name was given by historians, centuries later.`],
+["v130", "história", "V", `A Revolução de Outubro, na Rússia, aconteceu em novembro.`, `A Rússia ainda usava o calendário antigo, 13 dias atrasado. Para o resto do mundo, era 7 de novembro de 1917.`, `Russia's October Revolution actually happened in November.`, `Russia was still using the old calendar, 13 days behind. For the rest of the world, it was November 7, 1917.`],
+["v131", "história", "V", `A usina de Chernobyl continuou produzindo energia até o ano 2000.`, `O acidente de 1986 destruiu um dos quatro reatores. Os outros seguiram funcionando, e o último só foi desligado 14 anos depois.`, `The Chernobyl plant kept producing power until the year 2000.`, `The 1986 accident destroyed one of its four reactors. The other three kept running, and the last one wasn't shut down until 14 years later.`],
+["v132", "história", "V", `A Sagrada Família, em Barcelona, já levou mais tempo para ser construída do que a Grande Pirâmide do Egito.`, `A igreja começou em 1882. A pirâmide ficou pronta em cerca de 20 anos.`, `The Sagrada Família, in Barcelona, has already taken longer to build than the Great Pyramid of Egypt.`, `Construction on the church started in 1882. The pyramid was finished in about 20 years.`],
+["v133", "tabu", "V", `Na França, é legal casar com uma pessoa morta, com autorização do presidente.`, `O casamento póstumo está no Código Civil desde 1959. É preciso provar que o casal já pretendia se casar.`, `In France, it's legal to marry a dead person, with the president's authorization.`, `Posthumous marriage has been in the Civil Code since 1959. You have to prove the couple already planned to marry.`],
+["v134", "história", "V", `Na Alemanha, fugir da prisão não é crime.`, `A lei entende que buscar a liberdade é um instinto humano. Os crimes cometidos durante a fuga, porém, são punidos.`, `In Germany, escaping from prison isn't a crime.`, `The law treats the drive for freedom as a basic human instinct. Any crimes committed during the escape, though, are punished.`],
+["v135", "natureza", "V", `Na Suíça, é proibido ter um único porquinho-da-índia.`, `A lei de proteção animal considera que são bichos sociais e exige que tenham companhia da mesma espécie.`, `In Switzerland, it's illegal to own just one guinea pig.`, `The animal protection law treats them as social creatures and requires them to have a companion of their own species.`],
+["v136", "história", "V", `A França é o país com mais fusos horários do mundo.`, `São doze, por causa dos territórios espalhados por três oceanos. Rússia e Estados Unidos têm onze.`, `France is the country with the most time zones in the world.`, `It has twelve, thanks to territories scattered across three oceans. Russia and the United States have eleven.`],
+["v137", "cultura", "V", `O hino nacional da Espanha não tem letra.`, `A Marcha Real é só instrumental. Várias letras já foram propostas, e nenhuma foi adotada.`, `Spain's national anthem has no lyrics.`, `The Marcha Real is purely instrumental. Several lyrics have been proposed over the years, and none has ever been adopted.`],
+["v138", "cultura", "V", `A Nokia começou como uma fábrica de papel e já vendeu botas de borracha e papel higiênico.`, `Foi fundada em 1865, na Finlândia. Só virou empresa de telecomunicações mais de um século depois.`, `Nokia started out as a paper mill, and once sold rubber boots and toilet paper.`, `It was founded in 1865, in Finland. It only became a telecom company more than a century later.`],
+["v139", "história", "V", `Na Roma Antiga já existiam lanchonetes de rua, com balcões de comida quente pronta.`, `Só em Pompeia foram encontradas cerca de 150. Muita gente não tinha cozinha em casa.`, `Ancient Rome already had street fast-food counters serving hot meals.`, `Pompeii alone had about 150 of them. Many people had no kitchen at home.`],
+["v140", "história", "V", `Tutancâmon foi enterrado com uma adaga feita de ferro de meteorito.`, `Uma análise de 2016 confirmou a origem do metal. Os egípcios chamavam esse material de ferro do céu.`, `Tutankhamun was buried with a dagger made from meteorite iron.`, `A 2016 analysis confirmed the metal's origin. The Egyptians called the material "iron from the sky."`],
+["v141", "história", "V", `O corpo de Charlie Chaplin foi roubado do túmulo, e os ladrões pediram resgate à viúva.`, `Aconteceu na Suíça, em 1978. A viúva se recusou a pagar, e o caixão foi recuperado semanas depois.`, `Charlie Chaplin's body was stolen from his grave, and the thieves demanded a ransom from his widow.`, `It happened in Switzerland in 1978. His widow refused to pay, and the coffin was recovered weeks later.`],
+["v142", "ciência", "V", `Isaac Newton enfiou uma agulha grossa atrás do próprio olho para estudar como enxergamos as cores.`, `Ele anotou a experiência em detalhe: ao pressionar o olho por trás, via círculos coloridos.`, `Isaac Newton stuck a thick needle behind his own eye to study how we see color.`, `He recorded the experiment in detail: pressing on the back of his eye made him see colored circles.`],
+["v143", "ciência", "V", `Os cadernos de Marie Curie, a cientista pioneira da radioatividade e ganhadora de dois prêmios Nobel, ainda são radioativos e ficam guardados em caixas de chumbo.`, `Para consultá-los na biblioteca nacional da França, é preciso usar proteção e assinar um termo de responsabilidade.`, `Marie Curie's notebooks, the pioneering radioactivity scientist and two-time Nobel winner, are still radioactive and kept in lead-lined boxes.`, `To view them at France's national library, you need protective gear and have to sign a waiver.`],
+["v144", "história", "V", `Einstein foi convidado para ser presidente de Israel.`, `O convite veio em 1952. Ele recusou, dizendo que não tinha jeito para lidar com pessoas.`, `Einstein was once invited to be president of Israel.`, `The offer came in 1952. He turned it down, saying he didn't have the knack for dealing with people.`],
+["v145", "cultura", "V", `Picasso foi interrogado pela polícia como suspeito do roubo da Mona Lisa.`, `Em 1911, ele foi levado a depor por ter comprado estatuetas roubadas do Louvre. O ladrão do quadro era um funcionário do museu.`, `Picasso was questioned by police as a suspect in the theft of the Mona Lisa.`, `In 1911, he was brought in for questioning after buying statuettes stolen from the Louvre. The painting's actual thief was a museum employee.`],
+["v146", "cultura", "V", `Agatha Christie desapareceu por 11 dias e nunca explicou o que aconteceu.`, `Em 1926, mais de mil policiais a procuraram. Foi encontrada num hotel, registrada com o sobrenome da amante do marido.`, `Agatha Christie vanished for 11 days and never explained what happened.`, `In 1926, over a thousand police officers searched for her. She was found at a hotel, registered under her husband's mistress's last name.`],
+["v147", "espaço", "V", `Um cosmonauta partiu da União Soviética e, quando voltou à Terra, o país não existia mais.`, `Sergei Krikalev subiu em maio de 1991 e ficou 311 dias em órbita, porque não havia dinheiro para trazê-lo de volta.`, `A cosmonaut launched from the Soviet Union, and by the time he came back to Earth, the country no longer existed.`, `Sergei Krikalev went up in May 1991 and spent 311 days in orbit, because there wasn't enough money to bring him home.`],
+["v148", "tabu", "V", `As rainhas da França davam à luz diante de dezenas de cortesãos, para provar que o herdeiro era legítimo.`, `No primeiro parto de Maria Antonieta, o quarto encheu tanto que ela desmaiou por falta de ar.`, `French queens gave birth in front of dozens of courtiers, to prove the heir was legitimate.`, `During Marie Antoinette's first delivery, the room got so crowded she fainted from lack of air.`],
+["v149", "tabu", "V", `No século 19, era comum fotografar familiares mortos como lembrança, posados como se estivessem dormindo ou vivos.`, `A fotografia era cara, e para muitas famílias aquela era a única imagem que teriam da pessoa.`, `In the 19th century, it was common to photograph dead relatives as keepsakes, posed to look asleep or alive.`, `Photography was expensive, and for many families, that was the only picture they'd ever have of the person.`],
+["v150", "tabu", "V", `A palavra "histeria" vem da palavra grega para útero.`, `Durante séculos, médicos acreditaram que era uma doença exclusiva das mulheres, causada pelo útero.`, `The word "hysteria" comes from the Greek word for uterus.`, `For centuries, doctors believed it was a disease exclusive to women, caused by the uterus.`],
+["v151", "tabu", "V", `A palavra "abacate" vem de um termo asteca que também significava testículo.`, `A palavra original, ahuacatl, era usada para os dois, provavelmente por causa do formato da fruta.`, `The word "avocado" comes from an Aztec term that also meant testicle.`, `The original word, ahuacatl, was used for both, likely because of the fruit's shape.`],
+["v152", "espaço", "V", `A luz do Sol que chega até você hoje foi produzida no núcleo dele há mais de 10 mil anos.`, `A energia leva milênios para atravessar o interior do Sol. Da superfície até a Terra são só 8 minutos.`, `The sunlight reaching you right now was produced in the Sun's core more than 10,000 years ago.`, `The energy takes millennia to travel through the Sun's interior. From its surface to Earth, it's just 8 minutes.`],
+["v153", "espaço", "V", `A Austrália é mais larga do que a Lua.`, `A Austrália tem cerca de 4.000 km de leste a oeste. O diâmetro da Lua é de 3.474 km.`, `Australia is wider than the Moon.`, `Australia is about 4,000 km across from east to west. The Moon's diameter is 3,474 km.`],
+["v154", "espaço", "V", `O maior vulcão de Marte tem mais que o dobro da altura do Everest.`, `O Monte Olimpo tem cerca de 22 km de altura e uma base do tamanho de um país.`, `The largest volcano on Mars is more than twice the height of Mount Everest.`, `Olympus Mons stands about 22 km high, with a base the size of a small country.`],
+
+["m51", "história", "M", `Maria Antonieta disse "se não têm pão, que comam brioches".`, `Não há registro de que ela tenha dito isso. A frase já aparecia num livro escrito quando ela era criança.`, `Marie Antoinette said, "Let them eat cake."`, `There's no record she ever said this. The line was already appearing in a book written when she was a child.`],
+["m52", "história", "M", `O imperador Calígula nomeou o próprio cavalo como cônsul de Roma.`, `Os historiadores antigos dizem que ele ameaçou ou brincou com a ideia. A nomeação nunca aconteceu.`, `Emperor Caligula appointed his own horse as a consul of Rome.`, `Ancient historians say he threatened it or joked about it. The appointment never actually happened.`],
+["m53", "tabu", "M", `Na Idade Média, os senhores feudais tinham o direito legal de passar a noite de núpcias com a noiva de seus servos.`, `Não há prova de que essa lei tenha existido. A história foi espalhada séculos depois para pintar a Idade Média como bárbara.`, `In the Middle Ages, feudal lords had the legal right to spend the wedding night with their serfs' brides.`, `There's no proof this law ever existed. The story spread centuries later to paint the Middle Ages as barbaric.`],
+["m54", "história", "M", `Cleópatra, a última rainha do Egito, descendia de uma linhagem de faraós egípcios com mais de mil anos.`, `A família dela era grega, da Macedônia, e governava o Egito havia uns 300 anos.`, `Cleopatra, Egypt's last queen, descended from a line of Egyptian pharaohs over a thousand years old.`, `Her family was Greek, from Macedonia, and had ruled Egypt for about 300 years.`],
+["m55", "história", "M", `Os gladiadores romanos lutavam quase sempre até a morte.`, `Eram caros de treinar e manter. A maioria das lutas terminava com os dois vivos.`, `Roman gladiators almost always fought to the death.`, `They were expensive to train and keep. Most fights ended with both men alive.`],
+["m56", "história", "M", `As pirâmides do Egito foram construídas por escravos.`, `Eram trabalhadores egípcios, alimentados e alojados pelo Estado. Seus túmulos ficam ao lado das pirâmides.`, `Egypt's pyramids were built by slaves.`, `They were Egyptian workers, fed and housed by the state. Their tombs sit right next to the pyramids.`],
+["m57", "ciência", "M", `Isaac Newton descobriu a gravidade quando uma maçã caiu em sua cabeça.`, `Ele contou que viu uma maçã cair da árvore e ficou pensando. A maçã na cabeça foi acrescentada depois.`, `Isaac Newton discovered gravity when an apple fell on his head.`, `He said he saw an apple fall from a tree and started thinking. The apple on the head was added later.`],
+["m58", "história", "M", `A dama de ferro, um caixão com espinhos por dentro, foi usada por tribunais alemães do século 14 para arrancar confissões.`, `Não há registro de uso medieval. As peças conhecidas foram montadas séculos depois, para museus e feiras.`, `The Iron Maiden, a spiked coffin, was used by German courts in the 14th century to force confessions.`, `There's no record of medieval use. The known pieces were assembled centuries later, for museums and fairs.`],
+["m59", "história", "M", `A grande caça às bruxas realmente aconteceu na Europa durante a Idade Média.`, `Aconteceu, mas depois. O auge foi entre 1560 e 1630, já na Idade Moderna.`, `The great witch hunts really happened in Europe during the Middle Ages.`, `They did happen, but later. The peak was between 1560 and 1630, already in the Early Modern period.`],
+["m60", "história", "M", `Na Idade Média, era raro alguém passar dos 40 anos.`, `A média de vida era baixa por causa da mortalidade infantil. Quem chegava à idade adulta costumava viver bem mais.`, `In the Middle Ages, it was rare for anyone to live past 40.`, `Average lifespan was low because of child mortality. Those who reached adulthood often lived much longer.`],
+["m61", "história", "M", `Hitler criou as autoestradas alemãs.`, `A primeira foi inaugurada em 1932, antes de ele chegar ao poder. O regime apenas ampliou a rede e fez propaganda com ela.`, `Hitler created Germany's autobahns.`, `The first one opened in 1932, before he took power. His regime only expanded the network and used it for propaganda.`],
+["m62", "cultura", "M", `O corpo de Walt Disney foi congelado para ser reanimado no futuro.`, `Ele foi cremado em 1966. O boato surgiu poucos anos depois e nunca mais parou.`, `Walt Disney's body was frozen to be revived in the future.`, `He was cremated in 1966. The rumor started a few years later and never really went away.`],
+["m63", "história", "M", `Na quebra da Bolsa de 1929, dezenas de investidores se jogaram das janelas em Nova York.`, `Não houve onda de suicídios. A imagem veio de piadas e reportagens exageradas da época.`, `During the 1929 stock market crash, dozens of investors jumped from windows in New York.`, `There was no wave of suicides. The image came from jokes and exaggerated reporting at the time.`],
+["m64", "cultura", "M", `Foi a Coca-Cola que vestiu o Papai Noel de vermelho.`, `Ele já aparecia de vermelho em ilustrações décadas antes dos anúncios da marca, que são de 1931.`, `It was Coca-Cola that dressed Santa Claus in red.`, `He already appeared in red in illustrations decades before the brand's ads, which date from 1931.`],
+["m65", "cultura", "M", `A Bíblia diz que três reis visitaram Jesus recém-nascido.`, `O texto fala em magos, sem dizer quantos eram nem chamá-los de reis. O número veio dos três presentes.`, `The Bible says three kings visited the newborn Jesus.`, `The text mentions wise men, without saying how many or calling them kings. The number came from the three gifts.`],
+["m66", "cultura", "M", `Segundo a Bíblia, o fruto proibido que Eva comeu era uma maçã.`, `O texto só diz fruto. A maçã entrou na história pela arte europeia.`, `According to the Bible, the forbidden fruit Eve ate was an apple.`, `The text just says "fruit." The apple entered the story through European art.`],
+["m67", "corpo", "M", `Homens têm uma costela a menos do que mulheres.`, `Os dois têm 12 pares. A crença vem da história bíblica de Adão e Eva.`, `Men have one fewer rib than women.`, `Both have 12 pairs. The belief comes from the biblical story of Adam and Eve.`],
+["m68", "cultura", "M", `A frase "Elementar, meu caro Watson" aparece logo no primeiro livro de Sherlock Holmes, de 1887.`, `O livro é de 1887, mas a frase não aparece em nenhuma história escrita por Conan Doyle.`, `The phrase "Elementary, my dear Watson" appears right in the first Sherlock Holmes book, from 1887.`, `The book is from 1887, but the phrase never appears in any story written by Conan Doyle.`],
+["m69", "cultura", "M", `Em Star Wars, Darth Vader diz "Luke, eu sou seu pai".`, `A fala é "Não. Eu sou seu pai." O nome Luke não é dito.`, `In Star Wars, Darth Vader says "Luke, I am your father."`, `The line is "No. I am your father." The name Luke is never said.`],
+["m70", "brasil", "M", `A feijoada foi inventada por escravizados nas senzalas, com as sobras de carne dos senhores.`, `O prato descende dos cozidos europeus de feijão com carnes. As partes do porco usadas eram apreciadas, não sobras.`, `Feijoada was invented by enslaved people in the slave quarters, using leftover scraps of meat from their masters.`, `The dish descends from European bean-and-meat stews. The pork cuts used were prized, not scraps.`],
+["m71", "brasil", "M", `Santos Dumont inventou o relógio de pulso.`, `Relógios de pulso já existiam, usados sobretudo por mulheres. O modelo feito para ele em 1904 ajudou a popularizá-los entre homens.`, `Santos Dumont invented the wristwatch.`, `Wristwatches already existed, worn mostly by women. The model made for him in 1904 helped popularize them among men.`],
+["m72", "brasil", "M", `D. Pedro I proclamou a independência montado em um cavalo imponente, como no famoso quadro.`, `Os relatos de quem estava lá falam em uma mula de viagem. O quadro foi pintado mais de 60 anos depois.`, `Dom Pedro I proclaimed Brazil's independence mounted on a majestic horse, as in the famous painting.`, `Accounts from people who were there describe a travel mule. The painting was made more than 60 years later.`],
+["m73", "brasil", "M", `O Brasil foi o último país do mundo a abolir a escravidão.`, `Foi o último das Américas, em 1888. A Mauritânia, por exemplo, só aboliu em 1981.`, `Brazil was the last country in the world to abolish slavery.`, `It was the last in the Americas, in 1888. Mauritania, for instance, only abolished it in 1981.`],
+["m74", "portugal", "M", `O português é a única língua oficial de Portugal.`, `O mirandês, falado no nordeste do país, tem reconhecimento oficial desde 1999.`, `Portuguese is the only official language of Portugal.`, `Mirandese, spoken in the northeast of the country, has had official recognition since 1999.`],
+["m75", "brasil", "M", `O Cristo Redentor foi um presente da França ao Brasil.`, `A estátua foi paga com doações de brasileiros. Francês era o escultor contratado.`, `Christ the Redeemer was a gift from France to Brazil.`, `The statue was paid for with donations from Brazilians. The sculptor hired was French.`],
+["m76", "natureza", "M", `O tiranossauro viveu mais perto, no tempo, do estegossauro do que de nós.`, `É o contrário. Cerca de 80 milhões de anos separam os dois dinossauros, e 66 milhões separam o tiranossauro de nós.`, `The T-Rex lived closer in time to the Stegosaurus than to us.`, `It's the opposite. About 80 million years separate the two dinosaurs, and 66 million years separate the T-Rex from us.`],
+["m77", "natureza", "M", `O Saara é o maior deserto do mundo.`, `É a Antártida. Deserto é toda região onde quase não chove nem neva.`, `The Sahara is the world's largest desert.`, `It's Antarctica. A desert is any region where it almost never rains or snows.`],
+["m78", "espaço", "M", `Astronautas flutuam na Estação Espacial porque lá não há gravidade.`, `A gravidade ali é quase a mesma do chão. Eles flutuam porque a estação está em queda livre ao redor da Terra.`, `Astronauts float on the Space Station because there's no gravity up there.`, `Gravity there is almost the same as on the ground. They float because the station is in free fall around the Earth.`],
+["m79", "espaço", "M", `A Lua tem um lado escuro que nunca recebe luz do Sol.`, `O lado que não vemos da Terra recebe tanta luz quanto o outro. É oculto, não escuro.`, `The Moon has a dark side that never gets sunlight.`, `The side we never see from Earth gets just as much light as the other. It's hidden, not dark.`],
+["m80", "espaço", "M", `Mercúrio é o planeta mais quente do Sistema Solar.`, `É Vênus. A atmosfera densa retém o calor e mantém o planeta a mais de 460 °C.`, `Mercury is the hottest planet in the Solar System.`, `It's Venus. Its thick atmosphere traps heat and keeps the planet above 460°C.`],
+["m81", "corpo", "M", `O ser humano tem exatamente cinco sentidos.`, `Há também equilíbrio, temperatura, dor e a noção da posição do próprio corpo, entre outros.`, `Human beings have exactly five senses.`, `There's also balance, temperature, pain, and the sense of your body's position, among others.`],
+["m82", "corpo", "M", `Cabelos e unhas continuam crescendo depois da morte.`, `A pele desidrata e recua, o que dá a impressão de que cresceram.`, `Hair and nails keep growing after death.`, `The skin dehydrates and pulls back, which makes it look like they grew.`],
+["m83", "bar", "M", `Cada bebedeira mata milhares de neurônios.`, `O álcool atrapalha a comunicação entre os neurônios, mas não os mata em massa. O abuso por anos, esse sim, causa danos.`, `Every binge kills thousands of neurons.`, `Alcohol disrupts communication between neurons, but doesn't kill them en masse. Years of abuse, though, does cause damage.`],
+["m84", "bar", "M", `Café forte corta o efeito do álcool.`, `A cafeína deixa a pessoa mais acordada, mas igualmente bêbada.`, `Strong coffee sobers you up.`, `Caffeine makes you more awake, but just as drunk.`],
+["m85", "bar", "M", `Misturar cerveja com destilado embebeda mais do que a mesma quantidade de álcool de um tipo só.`, `O que conta é o total de álcool. Quem mistura costuma beber mais sem perceber.`, `Mixing beer with liquor gets you drunker than the same amount of alcohol from one type alone.`, `What matters is the total alcohol. People who mix just tend to drink more without noticing.`],
+["m86", "tabu", "M", `O tamanho do pé de um homem indica o tamanho do pênis.`, `Estudos que mediram as duas coisas não encontraram relação.`, `A man's shoe size indicates the size of his penis.`, `Studies that measured both found no connection.`],
+["m87", "cultura", "M", `Van Gogh morreu sem ter vendido um único quadro.`, `Vendeu pelo menos um, "A Vinha Encarnada", em 1890, além de trocar obras por comida e material.`, `Van Gogh died without ever having sold a single painting.`, `He sold at least one, "The Red Vineyard," in 1890, and also traded works for food and supplies.`],
+["m88", "portugal", "M", `O vinho do Porto é produzido e envelhecido na cidade do Porto.`, `As uvas e o vinho vêm do vale do Douro. As caves ficam em Vila Nova de Gaia, do outro lado do rio.`, `Port wine is produced and aged in the city of Porto.`, `The grapes and the wine come from the Douro Valley. The cellars are in Vila Nova de Gaia, across the river.`],
+["m89", "história", "M", `Júlio César nasceu de cesariana, e é daí que vem o nome da cirurgia.`, `A mãe dele viveu por décadas, e na época a operação só era feita em mulheres mortas ou à beira da morte.`, `Julius Caesar was born by cesarean section, which is where the surgery gets its name.`, `His mother lived for decades afterward, and at the time the operation was only performed on women who were dead or dying.`],
+["m90", "bar", "M", `O tomate faz parte da cozinha italiana desde o Império Romano.`, `O tomate veio das Américas e só chegou à Itália no século 16.`, `Tomatoes have been part of Italian cooking since the Roman Empire.`, `Tomatoes came from the Americas and only reached Italy in the 16th century.`],
+["m91", "cultura", "M", `Big Ben é o nome da torre do relógio de Londres.`, `É o nome do sino. A torre se chama Elizabeth Tower.`, `Big Ben is the name of London's clock tower.`, `It's the name of the bell. The tower is called Elizabeth Tower.`],
+["m92", "bar", "M", `Foi um monge francês, Dom Pérignon, quem inventou o champanhe ao descobrir como colocar bolhas no vinho.`, `Na época, as bolhas eram um defeito que estourava garrafas. Ele trabalhava justamente para eliminá-las.`, `It was a French monk, Dom Pérignon, who invented champagne by figuring out how to put bubbles in wine.`, `Back then, bubbles were a flaw that burst bottles. He actually worked to get rid of them.`],
+["m93", "cultura", "M", `Einstein disse que "insanidade é fazer a mesma coisa esperando resultados diferentes".`, `Não há registro de que ele tenha dito isso. A frase apareceu décadas depois da morte dele.`, `Einstein said that "insanity is doing the same thing over and over and expecting different results."`, `There's no record of him ever saying that. The quote showed up decades after he died.`],
+["m94", "portugal", "M", `A Revolução dos Cravos, que derrubou a ditadura em Portugal em 25 de abril de 1974, terminou sem uma única morte.`, `Quatro pessoas foram mortas a tiro pela polícia política, diante da sede dela, em Lisboa.`, `The Carnation Revolution, which overthrew Portugal's dictatorship on April 25, 1974, ended without a single death.`, `Four people were shot dead by the secret police, right outside their headquarters, in Lisbon.`],
+["m95", "corpo", "M", `Fazer xixi em cima de uma queimadura de água-viva alivia a dor.`, `Pode até piorar. O indicado é lavar com água do mar ou vinagre.`, `Peeing on a jellyfish sting relieves the pain.`, `It can even make it worse. The right move is to rinse with seawater or vinegar.`],
+["m96", "brasil", "M", `O formato de avião de Brasília foi escolhido de propósito pelo urbanista Lúcio Costa, para simbolizar um país que decolava rumo ao futuro.`, `Ele partiu de dois eixos que se cruzam, como o sinal da cruz, e não gostava da comparação com um avião.`, `Brasília's airplane shape was chosen on purpose by urban planner Lúcio Costa, to symbolize a country taking off toward the future.`, `He started from two crossing axes, like the sign of the cross, and he disliked the comparison to an airplane.`],
+["m97", "esporte", "M", `A camisa amarela acompanha a seleção brasileira desde a primeira Copa do Mundo, em 1930, quando o time já entrou em campo de amarelo.`, `A seleção jogava de branco. O amarelo foi adotado depois da derrota de 1950 e estreou em Copas em 1954.`, `The yellow jersey has been with Brazil's national team since the first World Cup, in 1930, when the team already played in yellow.`, `The team played in white. Yellow was adopted after the 1950 defeat and debuted at World Cups in 1954.`],
+["m98", "natureza", "M", `A Amazônia produz a maior parte do oxigênio que respiramos.`, `A floresta consome quase todo o oxigênio que produz. A maior parte do que respiramos vem dos oceanos.`, `The Amazon produces most of the oxygen we breathe.`, `The forest consumes almost all the oxygen it produces. Most of what we breathe comes from the oceans.`],
+["m99", "bar", "M", `O absinto pode causar alucinações, e foi por isso que acabou proibido em vários países da Europa.`, `A proibição existiu, mas por um medo sem base. O efeito do absinto é só o do álcool, que é muito forte.`, `Absinthe can cause hallucinations, which is why it ended up banned in several European countries.`, `The ban was real, but based on an unfounded fear. Absinthe's effect is just that of alcohol, which is very strong.`],
+["m100", "bar", "M", `A tequila tradicional mexicana é engarrafada com uma larva no fundo.`, `A larva aparece em alguns mezcais, outra bebida, e foi criada como truque de marketing no século 20.`, `Traditional Mexican tequila is bottled with a worm at the bottom.`, `The worm shows up in some mezcals, a different drink, and was created as a marketing gimmick in the 20th century.`],
+["m101", "corpo", "M", `Acordar um sonâmbulo de repente é perigoso, porque o susto pode provocar um infarto ou deixá-lo em estado de choque.`, `Ele acorda confuso e mais nada. Perigoso é deixá-lo andar pela casa.`, `Waking a sleepwalker suddenly is dangerous, because the shock can cause a heart attack or put them into shock.`, `They just wake up confused, nothing more. What's dangerous is letting them walk around the house.`],
+["m102", "portugal", "M", `D. Pedro I de Portugal mandou coroar Inês de Castro depois de morta e obrigou a corte a beijar a mão do cadáver.`, `A cena só aparece em textos escritos cerca de 200 anos depois. Ele declarou que tinha casado com ela, mas a coroação do cadáver é lenda.`, `Dom Pedro I of Portugal had Inês de Castro crowned after her death and forced the court to kiss the corpse's hand.`, `The scene only appears in texts written about 200 years later. He declared he had married her, but the coronation of the corpse is legend.`],
+["m103", "portugal", "M", `A palavra japonesa "arigatô" vem do português "obrigado".`, `A palavra já existia no japonês séculos antes da chegada dos portugueses.`, `The Japanese word "arigato" comes from the Portuguese "obrigado."`, `The word already existed in Japanese centuries before the Portuguese arrived.`],
+["m104", "esporte", "M", `A Índia desistiu da Copa de 1950, no Brasil, porque a FIFA proibiu seus jogadores de jogar descalços.`, `A federação indiana alegou falta de tempo e de dinheiro para a viagem, e dava mais valor às Olimpíadas.`, `India pulled out of the 1950 World Cup, in Brazil, because FIFA banned its players from playing barefoot.`, `The Indian federation cited lack of time and money for the trip, and cared more about the Olympics.`],
+["m105", "brasil", "M", `O nome "Brasil" vem de uma palavra tupi que significa "terra vermelha".`, `Vem do pau-brasil, árvore cuja madeira tem cor de brasa.`, `The name "Brazil" comes from a Tupi word meaning "red earth."`, `It comes from brazilwood, a tree whose wood is the color of embers.`],
+["m106", "brasil", "M", `O Carnaval foi trazido ao Brasil pelos africanos escravizados.`, `A festa chegou com os portugueses, como entrudo. As influências africanas vieram depois e transformaram a festa.`, `Carnival was brought to Brazil by enslaved Africans.`, `The festival arrived with the Portuguese, as "entrudo." African influences came later and transformed it.`],
+["m107", "portugal", "M", `Nenhuma capital europeia fica mais a oeste do que Lisboa.`, `Reykjavik, na Islândia, fica bem mais a oeste.`, `No European capital lies farther west than Lisbon.`, `Reykjavik, in Iceland, lies much farther west.`],
+["m108", "brasil", "M", `Brasília foi a segunda capital do Brasil, depois do Rio de Janeiro.`, `Foi a terceira. A primeira foi Salvador, de 1549 a 1763.`, `Brasília was Brazil's second capital, after Rio de Janeiro.`, `It was the third. The first was Salvador, from 1549 to 1763.`],
+["m109", "portugal", "M", `O ponto mais alto de Portugal fica na Serra da Estrela.`, `É a montanha do Pico, nos Açores, com 2.351 metros. A Serra da Estrela é o ponto mais alto do continente.`, `Portugal's highest point is in the Serra da Estrela.`, `It's Mount Pico, in the Azores, at 2,351 meters. Serra da Estrela is only the highest point on the mainland.`],
+["m110", "portugal", "M", `O bacalhau da cozinha portuguesa é pescado há séculos na costa norte de Portugal.`, `O bacalhau vive em águas frias e vem da Noruega, da Islândia e do Canadá.`, `The cod used in Portuguese cooking has been fished for centuries off Portugal's own northern coast.`, `Cod lives in cold waters and comes from Norway, Iceland, and Canada.`],
+["m111", "cultura", "M", `A palavra "gringo" surgiu quando mexicanos gritavam "green, go!" para soldados americanos de uniforme verde.`, `A palavra já era usada na Espanha antes disso. Vem de "griego", grego, no sentido de língua que não se entende.`, `The word "gringo" started when Mexicans shouted "green, go!" at American soldiers in green uniforms.`, `The word was already used in Spain before that. It comes from "griego," Greek, meaning a language nobody could understand.`],
+["m112", "história", "M", `Em 1456, um papa excomungou o cometa Halley.`, `A história foi inventada séculos depois. O papa apenas pediu orações por causa de uma guerra.`, `In 1456, a pope excommunicated Halley's Comet.`, `The story was invented centuries later. The pope only called for prayers because of a war.`],
+["m113", "tabu", "M", `Os romanos faziam juramentos segurando os próprios testículos, e é daí que vem a palavra "testemunha".`, `Não há registro desse costume. As duas palavras são aparentadas em latim, mas o juramento é invenção.`, `Romans swore oaths while holding their own testicles, and that's supposedly where the word "testify" comes from.`, `There's no record of this custom. The two words share a Latin root, but the oath itself is an invention.`],
+["m114", "história", "M", `Na Idade Média, as especiarias serviam para disfarçar o gosto de carne estragada.`, `As especiarias custavam muito mais que a carne. Quem podia pagá-las comia carne fresca.`, `In the Middle Ages, spices were used to mask the taste of spoiled meat.`, `Spices cost far more than meat. Whoever could afford them ate fresh meat.`],
+["m115", "bar", "M", `Na Idade Média, as pessoas bebiam cerveja o dia todo porque a água era imprópria para consumo.`, `Bebia-se água normalmente, de poços e fontes. A cerveja era alimento e prazer, não substituta da água.`, `In the Middle Ages, people drank beer all day because the water wasn't safe to drink.`, `People drank water normally, from wells and springs. Beer was food and pleasure, not a substitute for water.`],
+["m116", "história", "M", `Piratas como o Barba Negra enterravam parte do saque em ilhas desertas e guardavam mapas cifrados para voltar depois.`, `Os piratas dividiam e gastavam o saque depressa. O mapa do tesouro vem do romance "A Ilha do Tesouro".`, `Pirates like Blackbeard buried part of their loot on deserted islands and kept coded maps to come back for it later.`, `Pirates split up and spent their loot fast. The treasure map comes from the novel "Treasure Island."`],
+["m117", "história", "M", `As armaduras medievais eram tão pesadas que os cavaleiros precisavam de um guindaste para montar a cavalo.`, `Uma armadura completa pesava de 20 a 25 kg, bem distribuídos. Dava para correr e montar sem ajuda.`, `Medieval armor was so heavy that knights needed a crane to mount their horses.`, `A full suit of armor weighed 20 to 25 kg, well distributed. You could run and mount a horse without help.`],
+["m118", "história", "M", `Os navios de guerra da Roma Antiga eram movidos por escravos acorrentados aos remos.`, `Os remadores eram homens livres e treinados. A imagem dos escravos acorrentados vem de romances e filmes.`, `Ancient Rome's warships were powered by slaves chained to the oars.`, `The rowers were free, trained men. The image of chained slaves comes from novels and movies.`],
+["m119", "história", "M", `Antes de cada combate, os gladiadores saudavam o imperador com a frase "Ave, César, os que vão morrer te saúdam".`, `Há um único registro da frase, dita por prisioneiros condenados numa batalha naval encenada.`, `Before each fight, gladiators saluted the emperor with the line "Hail Caesar, we who are about to die salute you."`, `There's only one record of the line, spoken by condemned prisoners in a staged naval battle.`],
+["m120", "cultura", "M", `A Torre Eiffel foi desenhada pelo próprio Gustave Eiffel.`, `O projeto é de dois engenheiros da empresa dele. Eiffel comprou os direitos e construiu.`, `The Eiffel Tower was designed by Gustave Eiffel himself.`, `The design is by two engineers at his company. Eiffel bought the rights and built it.`],
+["m121", "cultura", "M", `Mozart morreu envenenado pelo compositor rival Antonio Salieri.`, `Não há qualquer evidência. Mozart morreu de doença, e a história ganhou força com uma peça de teatro e um filme.`, `Mozart died poisoned by his rival composer Antonio Salieri.`, `There's no evidence for it at all. Mozart died of illness, and the story caught on thanks to a play and a movie.`],
+["m122", "história", "M", `Stonehenge foi construído pelos druidas.`, `O monumento ficou pronto cerca de 2 mil anos antes de existirem druidas.`, `Stonehenge was built by the druids.`, `The monument was finished about 2,000 years before druids existed.`],
+["m123", "história", "M", `A Suíça, neutra desde 1815, aboliu o exército depois da Segunda Guerra e hoje mantém apenas uma guarda de fronteira.`, `A Suíça tem exército e serviço militar obrigatório. A abolição foi proposta e rejeitada em plebiscito.`, `Switzerland, neutral since 1815, abolished its army after World War II and today keeps only a border guard.`, `Switzerland has an army and mandatory military service. Abolition was proposed and rejected in a referendum.`],
+["m124", "cultura", "M", `O sinal de socorro SOS significa "Save Our Souls".`, `As letras não significam nada. Foram escolhidas por serem fáceis de transmitir em código Morse.`, `The distress signal SOS stands for "Save Our Souls."`, `The letters don't stand for anything. They were picked because they're easy to send in Morse code.`],
+["m125", "cultura", "M", `Sócrates escreveu a frase "só sei que nada sei" na "Apologia", o livro em que narra a própria defesa no tribunal que o condenou à morte.`, `A "Apologia" foi escrita por Platão. Sócrates não deixou nada escrito.`, `Socrates wrote "I know that I know nothing" in the "Apology," the book where he recounts his own defense at the trial that sentenced him to death.`, `The "Apology" was written by Plato. Socrates left nothing in writing.`],
+["m126", "cultura", "M", `A frase "os fins justificam os meios" abre o capítulo mais famoso de "O Príncipe", de Maquiavel, publicado em 1532.`, `A data é real, mas a frase não aparece em lugar nenhum do livro.`, `The phrase "the ends justify the means" opens the most famous chapter of Machiavelli's "The Prince," published in 1532.`, `The date is real, but the phrase doesn't appear anywhere in the book.`],
+["m127", "cultura", "M", `A Bíblia diz que Jesus nasceu no dia 25 de dezembro.`, `A Bíblia não dá data nenhuma. O dia foi fixado pela Igreja séculos depois.`, `The Bible says Jesus was born on December 25th.`, `The Bible gives no date at all. The day was fixed by the Church centuries later.`],
+["m128", "cultura", "M", `Os sete pecados capitais estão listados no Novo Testamento, numa carta do apóstolo Paulo aos cristãos de Roma.`, `A lista não está na Bíblia. Foi organizada por um papa no século 6.`, `The seven deadly sins are listed in the New Testament, in a letter from the apostle Paul to the Christians of Rome.`, `The list isn't in the Bible. It was compiled by a pope in the 6th century.`],
+["m129", "cultura", "M", `O Buda histórico era o monge gordo e sorridente das estátuas.`, `A figura gorda e risonha é outro monge, chinês, que viveu mais de mil anos depois.`, `The historical Buddha was the fat, smiling monk from the statues.`, `The fat, laughing figure is a different monk, Chinese, who lived more than a thousand years later.`],
+["m130", "tabu", "M", `O Kama Sutra é um catálogo ilustrado de posições sexuais, encomendado por um marajá indiano para educar os filhos.`, `É um tratado antigo sobre convivência, sedução e vida a dois. As posições ocupam uma pequena parte, e o original nem tinha ilustrações.`, `The Kama Sutra is an illustrated catalog of sex positions, commissioned by an Indian maharaja to educate his children.`, `It's an ancient treatise on companionship, seduction, and life as a couple. Positions take up a small part, and the original wasn't even illustrated.`],
+["m131", "ciência", "M", `O petróleo é formado por restos de dinossauros.`, `O petróleo vem sobretudo de plâncton e algas microscópicas que se acumularam no fundo de mares antigos.`, `Oil is formed from dinosaur remains.`, `Oil comes mainly from plankton and microscopic algae that piled up on the floor of ancient seas.`],
+["m132", "ciência", "M", `Os diamantes são carvão comprimido durante milhões de anos.`, `Os diamantes se formam muito mais fundo na Terra, e a maioria é mais antiga que as plantas que deram origem ao carvão.`, `Diamonds are coal compressed over millions of years.`, `Diamonds form much deeper inside the Earth, and most are older than the plants that gave rise to coal.`],
+["m133", "corpo", "M", `A língua é o músculo mais forte do corpo humano.`, `A língua nem é um músculo só. Em força, quem ganha é o músculo da mandíbula.`, `The tongue is the strongest muscle in the human body.`, `The tongue isn't even a single muscle. For sheer strength, the jaw muscle wins.`],
+["m134", "ciência", "M", `No hemisfério sul, a água do ralo gira no sentido contrário ao do hemisfério norte.`, `Numa pia, o que manda é o formato do ralo e o movimento que a água já tinha. O efeito da rotação da Terra só aparece em furacões.`, `In the southern hemisphere, water spirals down the drain the opposite way from the northern hemisphere.`, `In a sink, it's the drain's shape and the motion the water already had that decide it. The Earth's rotation only shows up in hurricanes.`],
+["m135", "corpo", "M", `Nascem mais bebês em noites de lua cheia.`, `Estudos com milhões de partos não encontraram diferença entre as fases da Lua.`, `More babies are born on full-moon nights.`, `Studies of millions of births found no difference between moon phases.`],
+["m136", "tecnologia", "M", `Usar o celular em um posto de gasolina pode provocar uma explosão.`, `Não há caso confirmado. Os incêndios registrados em postos foram causados por eletricidade estática.`, `Using a cell phone at a gas station can cause an explosion.`, `There's no confirmed case. Fires at gas stations have been caused by static electricity.`],
+["m137", "corpo", "M", `Pessoas criativas usam mais o lado direito do cérebro, e pessoas lógicas, o esquerdo.`, `Exames de imagem mostram que os dois lados trabalham juntos em qualquer pessoa.`, `Creative people use the right side of the brain more, and logical people use the left.`, `Imaging scans show both sides work together in everyone.`],
+["m138", "tecnologia", "M", `O mouse de computador foi inventado pela Apple.`, `O mouse foi criado pelo engenheiro Douglas Engelbart nos anos 1960. A Apple o popularizou duas décadas depois.`, `The computer mouse was invented by Apple.`, `The mouse was created by engineer Douglas Engelbart in the 1960s. Apple popularized it two decades later.`],
+["m139", "corpo", "M", `Gêmeos idênticos têm as mesmas impressões digitais.`, `As digitais se formam no útero, pelo contato com o ambiente, e são diferentes em cada um.`, `Identical twins have the same fingerprints.`, `Fingerprints form in the womb, through contact with the environment, and come out different in each twin.`],
+["m140", "natureza", "M", `No Ártico, os pinguins são uma das principais presas do urso-polar, depois das focas.`, `Não existem pinguins no Ártico. Eles vivem no hemisfério sul, e os dois nunca se encontram na natureza.`, `In the Arctic, penguins are one of the polar bear's main prey, after seals.`, `There are no penguins in the Arctic. They live in the southern hemisphere, and the two never meet in the wild.`],
+["m141", "corpo", "M", `Perdemos a maior parte do calor do corpo pela cabeça, por isso o gorro é a peça mais importante no frio.`, `A cabeça perde calor na mesma proporção que qualquer outra parte descoberta do corpo.`, `We lose most of our body heat through the head, which is why a hat is the most important thing to wear in the cold.`, `The head loses heat at the same rate as any other uncovered part of the body.`],
+["m142", "corpo", "M", `Todo adulto precisa beber pelo menos dois litros de água por dia.`, `A necessidade varia de pessoa para pessoa, e a água dos alimentos e de outras bebidas também conta.`, `Every adult needs to drink at least two liters of water a day.`, `The need varies from person to person, and water from food and other drinks counts too.`],
+["m143", "corpo", "M", `Tomar vitamina C evita resfriados.`, `Em pessoas saudáveis, a vitamina C não reduz o número de resfriados.`, `Taking vitamin C prevents colds.`, `In healthy people, vitamin C doesn't cut the number of colds.`],
+["m144", "corpo", "M", `Em casos de gripe forte, o antibiótico ajuda o corpo a combater o vírus mais depressa, e por isso os médicos costumam receitá-lo.`, `Antibiótico só age contra bactérias. Contra o vírus da gripe não faz nada.`, `In a bad case of the flu, antibiotics help the body fight the virus faster, which is why doctors often prescribe them.`, `Antibiotics only work against bacteria. Against the flu virus, they do nothing.`],
+["m145", "bar", "M", `Um banho frio faz a bebedeira passar mais rápido.`, `O banho só acorda. O álcool sai do sangue no ritmo do fígado, e nada acelera isso.`, `A cold shower sobers you up faster.`, `The shower just wakes you up. Alcohol leaves the blood at the liver's own pace, and nothing speeds that up.`],
+["m146", "tabu", "M", `Ostras são um afrodisíaco comprovado pela ciência.`, `Não há estudo em humanos que confirme o efeito.`, `Oysters are an aphrodisiac proven by science.`, `There's no human study confirming the effect.`],
+["m147", "corpo", "M", `Mulheres que moram juntas acabam sincronizando a menstruação.`, `A ideia vem de um estudo pequeno dos anos 1970. Pesquisas maiores não confirmaram o efeito.`, `Women who live together end up syncing their periods.`, `The idea comes from a small study from the 1970s. Larger studies haven't confirmed the effect.`],
+["m148", "esporte", "M", `Fazer sexo na véspera de uma competição prejudica o desempenho do atleta.`, `As pesquisas não encontram prejuízo na força nem na resistência.`, `Having sex the night before a competition hurts an athlete's performance.`, `Studies find no loss of strength or endurance.`],
+["m149", "natureza", "M", `Os camelos armazenam água nas corcovas.`, `As corcovas guardam gordura, que serve de reserva de energia.`, `Camels store water in their humps.`, `Humps store fat, which serves as an energy reserve.`],
+["m150", "cultura", "M", `O vestido de noiva branco é uma tradição que vem da Idade Média, como símbolo de pureza.`, `O branco virou moda em 1840, com o casamento da rainha Vitória. Antes, as noivas usavam o melhor vestido que tinham, de qualquer cor.`, `The white wedding dress is a tradition going back to the Middle Ages, as a symbol of purity.`, `White became fashionable in 1840, with Queen Victoria's wedding. Before that, brides wore the best dress they had, in any color.`],
+["m151", "tabu", "M", `No século 19, mulheres removiam costelas cirurgicamente para caber no espartilho.`, `Não há registro médico de nenhuma cirurgia desse tipo, que na época seria quase sempre fatal.`, `In the 19th century, women had ribs surgically removed to fit into corsets.`, `There's no medical record of any such surgery, which at the time would almost always have been fatal.`]
+];
+
+const EXAMPLE = ["Gustavo","Luísa","Marcela","Camila","Felipe"];
+const STILL = false; /* as animações são parte do jogo: rodam mesmo com "reduzir movimento" ligado no aparelho */
+let S = null, tick = null, bodies = [], raf = null, arena = null, grab = null, last = 0, decided = -1;
+const $app = document.getElementById("app");
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = { get(){ try { return JSON.parse(localStorage.getItem("ko-names")); } catch(e){ return null; } }, set(v){ try { localStorage.setItem("ko-names", JSON.stringify(v)); } catch(e){} } };
+const AST = `<svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 5v30M7 12.5l26 15M7 27.5l26-15" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/></svg>`;
+let justAdded = false, slRaf = null;
+const WM = cls => `<span class="wm ${cls}">the bate<i>*</i></span>`;
+const langStore = { get(){ try { return localStorage.getItem("bate-lang"); } catch(e){ return null; } }, set(v){ try { localStorage.setItem("bate-lang", v); } catch(e){} } };
+const LANGBTN = () => `<button class="pill" data-act="lang" aria-label="${S.lang === "pt" ? "Switch to English" : "Mudar para português"}">${S.lang === "pt" ? "EN" : "PT"}</button>`;
+const cardText = c => (S.lang === "en" && c[5]) ? [c[5], c[6]] : [c[3], c[4]];
+const L = () => I18N[S.lang] || I18N.pt;
+const I18N = {
+  pt: {
+    sub: "convencer vale mais do que estar certo. a certeza é a primeira mentira.",
+    who: "quem joga", exampleNote: "nomes de exemplo. adicione os da sua mesa.",
+    namePh: "nome", nameAria: "Nome do jogador", addAria: "Adicionar jogador", rmAria: n => `Remover ${n}`,
+    howPlays: "como joga",
+    modeCoop: "cooperativo", modeCoopSub: "a mesa inteira contra o baralho",
+    modeJuri: "júri", modeJuriSub: "dois times tentam convencer quem ficou de fora",
+    modeTroca: "contágio", modeTrocaSub: "dois times tentam contagiar a mesa pro seu lado",
+    modewarn: min => `este modo precisa de pelo menos ${min} jogadores.`,
+    duration: "duração", len: ["rápido","regular","longo"], lenCards: n => `~${n} cartas`,
+    debateTime: "tempo de debate", noClock: "sem relógio", start: "começar",
+    howToPlay: "como jogar", close: "fechar", gotIt: "entendi",
+    table: "a mesa", bubbleOf: (l,t) => `bolha ${l}/${t}`, scoreboard: "placar",
+    truth: "verdade", lie: "mentira", defending: list => `defendem: ${list}`,
+    midCoop: "decidam juntos e arrastem a bolha", midJuri: "júri: arraste o seu nome", midTroca: "convencido? arraste o seu nome para o outro lado",
+    rereadCard: "ler a carta", flip: "virar", decide: "decidam", oneLeft: "falta 1", nLeft: n => `faltam ${n}`, flipCard: "virar a carta",
+    tiebreak: "desempate", decisive: "carta decisiva", roundN: n => `rodada ${n}`,
+    reads: name => `${name} lê →`, coopTie: " e desempata se a mesa rachar", debate: "debater",
+    boardCoop: "a mesa contra o baralho", boardElse: t => `placar · meta ${t} pontos`, back: "voltar", endGame: "terminar o jogo", letsgo: "bora",
+    hitTxt: "<i>acertaram.</i> a bolha encheu.", missTxt: "<i>erraram.</i> a bolha rachou.",
+    tableWon: "a mesa ganhou", deckWon: "o baralho ganhou",
+    wonWhy: (cards, miss) => `Vocês venceram o baralho em ${cards} cartas, com ${miss} ${miss === 1 ? "erro" : "erros"} pelo caminho.`,
+    lostWhy: (run, lvl, target) => `${run} erros seguidos. A mesa chegou a ${lvl} de ${target}.`,
+    noteTie: "empate: a mesa não decidiu.", noteRight: "a mesa acertou.", noteFooled: "a mesa foi enganada.",
+    rJuriRight: "júri, acertou", rFooledJuri: "enganou o júri", rConvincedJuri: "convenceu o júri", rSplitJuri: "júri dividido",
+    rNoTeamRight: "sem time, acertou", rSwitchRight: "trocou de lado e acertou", rSwitchWrong: "trocou de lado e errou",
+    rTableRight: "a mesa acertou", rFooledTable: "enganou a mesa", nobodyScored: "ninguém pontuou.",
+    popBubble: "estourar a bolha", seeEnd: "ver o fim", nextCard: "próxima carta", seeWinner: "ver quem ganhou", tiebreakCard: "carta de desempate",
+    playAgain: "jogar de novo", changeSetup: "trocar jogadores ou modo",
+    cardsN: n => `${n} cartas`, bubblePopped: "a bolha estourou", bubbleWilted: "a bolha murchou", gameEnded: "jogo encerrado", techTie: "empate técnico",
+    bubbleAt: (lvl,target) => `A bolha ficou em ${lvl} de ${target}.`, roundsN: n => `${n} rodadas`,
+    tieBetween: "empate entre", wonDebate: "ganhou o debate",
+    titleTurncoat: "vira-casaca", titleTurncoatSub: "mais vezes trocou de lado",
+    titleGullible: "acredita em tudo", titleGullibleSub: "mais vezes caiu em mentira",
+    titleSkeptic: "não acredita em nada", titleSkepticSub: "mais vezes duvidou de uma verdade",
+    and: " e ", timeUp: "tempo!",
+    howto: {
+      coop: ["cooperativo", ["Alguém lê a carta em voz alta. Ninguém sabe a resposta.", "A mesa debate e decide junta. Deu empate? Quem leu desempata.", "Arrastem a bolha da mesa para <b>verdade</b> ou <b>mentira</b> e virem a carta."],
+        "Cada acerto enche a bolha. Quando ela estoura, a mesa ganha. Cada erro racha a bolha: três erros seguidos e quem ganha é o baralho."],
+      juri: ["júri", ["O app sorteia: um time defende <b>verdade</b>, outro defende <b>mentira</b>, e o resto é júri.", "Os times argumentam, mesmo sem saber se estão do lado certo.", "Só o júri vota, arrastando o próprio nome."],
+        "Jurado que acerta: 2 pontos. Time que convence o júri: 2 para cada, ou 3 se convenceu do lado errado. Júri dividido: 1 para cada. Ganha quem chegar primeiro à meta."],
+      troca: ["contágio", ["O app sorteia quem defende <b>verdade</b> e quem defende <b>mentira</b>. Cada nome já começa no seu lado.", "Debatam. Foi convencido? Arraste o seu nome para o outro lado.", "O lado com mais nomes é o voto da mesa."],
+        "Mesa acertou: 1 ponto para todos. Mesa errou: 1 ponto só para o time que a enganou. Trocou de lado e acertou: 2. Trocou e errou: perde 1. Empate: ninguém pontua."]
+    }
+  },
+  en: {
+    sub: "convincing beats being right. certainty is the first lie.",
+    who: "who's playing", exampleNote: "example names. add your own group.",
+    namePh: "name", nameAria: "Player name", addAria: "Add player", rmAria: n => `Remove ${n}`,
+    howPlays: "how it's played",
+    modeCoop: "co-op", modeCoopSub: "the whole table against the deck",
+    modeJuri: "jury", modeJuriSub: "two teams try to convince whoever's not playing",
+    modeTroca: "contagious", modeTrocaSub: "two teams try to infect the table with their side",
+    modewarn: min => `this mode needs at least ${min} players.`,
+    duration: "duration", len: ["quick","standard","long"], lenCards: n => `~${n} cards`,
+    debateTime: "debate time", noClock: "no clock", start: "start",
+    howToPlay: "how to play", close: "close", gotIt: "got it",
+    table: "the table", bubbleOf: (l,t) => `bubble ${l}/${t}`, scoreboard: "scoreboard",
+    truth: "truth", lie: "lie", defending: list => `defending: ${list}`,
+    midCoop: "decide together and drag the bubble", midJuri: "jury: drag your name", midTroca: "convinced? drag your name to the other side",
+    rereadCard: "reread the card", flip: "flip", decide: "decide", oneLeft: "1 left", nLeft: n => `${n} left`, flipCard: "flip the card",
+    tiebreak: "tiebreaker", decisive: "deciding card", roundN: n => `round ${n}`,
+    reads: name => `${name} reads →`, coopTie: " and breaks the tie if the table splits", debate: "debate",
+    boardCoop: "the table against the deck", boardElse: t => `scoreboard · goal ${t} points`, back: "back", endGame: "end the game", letsgo: "let's go",
+    hitTxt: "<i>you got it.</i> the bubble filled up.", missTxt: "<i>you missed.</i> the bubble cracked.",
+    tableWon: "the table won", deckWon: "the deck won",
+    wonWhy: (cards, miss) => `You beat the deck in ${cards} cards, with ${miss} ${miss === 1 ? "miss" : "misses"} along the way.`,
+    lostWhy: (run, lvl, target) => `${run} misses in a row. The table reached ${lvl} of ${target}.`,
+    noteTie: "tie: the table couldn't decide.", noteRight: "the table got it right.", noteFooled: "the table got fooled.",
+    rJuriRight: "jury, correct", rFooledJuri: "fooled the jury", rConvincedJuri: "convinced the jury", rSplitJuri: "split jury",
+    rNoTeamRight: "no team, correct", rSwitchRight: "switched sides and got it right", rSwitchWrong: "switched sides and got it wrong",
+    rTableRight: "the table got it right", rFooledTable: "fooled the table", nobodyScored: "nobody scored.",
+    popBubble: "pop the bubble", seeEnd: "see the end", nextCard: "next card", seeWinner: "see who won", tiebreakCard: "tiebreaker card",
+    playAgain: "play again", changeSetup: "change players or mode",
+    cardsN: n => `${n} cards`, bubblePopped: "the bubble popped", bubbleWilted: "the bubble wilted", gameEnded: "game ended", techTie: "technical tie",
+    bubbleAt: (lvl,target) => `The bubble ended at ${lvl} of ${target}.`, roundsN: n => `${n} rounds`,
+    tieBetween: "tie between", wonDebate: "won the debate",
+    titleTurncoat: "turncoat", titleTurncoatSub: "switched sides the most",
+    titleGullible: "believes everything", titleGullibleSub: "fell for the most lies",
+    titleSkeptic: "believes nothing", titleSkepticSub: "doubted the most truths",
+    and: " and ", timeUp: "time!",
+    howto: {
+      coop: ["co-op", ["Someone reads the card out loud. No one knows the answer.", "The table debates and decides together. Tied? Whoever read breaks the tie.", "Drag the table's bubble to <b>truth</b> or <b>lie</b> and flip the card."],
+        "Every right answer fills the bubble. When it pops, the table wins. Every miss cracks it: three misses in a row and the deck wins instead."],
+      juri: ["jury", ["The app picks teams: one defends <b>truth</b>, the other defends <b>lie</b>, and the rest are the jury.", "The teams argue, even without knowing if they're on the right side.", "Only the jury votes, by dragging their own name."],
+        "Juror who's right: 2 points. Team that convinces the jury: 2 points each, or 3 if they convinced them of the wrong side. Split jury: 1 point each. First to the goal wins."],
+      troca: ["contagious", ["The app picks who defends <b>truth</b> and who defends <b>lie</b>. Everyone starts on their own side.", "Debate it. Got convinced? Drag your name to the other side.", "Whichever side has more names is the table's vote."],
+        "Table got it right: 1 point for everyone. Table got it wrong: 1 point only for the team that fooled it. Switched sides and got it right: 2. Switched and got it wrong: lose 1. Tie: nobody scores."]
+    }
+  }
+};
+
+function start(data){
+  if (data && data.screen) S = data;
+  else { const saved = store.get(), has = saved && saved.length;
+    S = { screen:"setup", mode:"coop", sub:"juri", timer:90, names: has ? saved : EXAMPLE.slice(), example: !has,
+      players:[], deck:[], pos:0, round:0, reader:-1, phase:"discuss", votes:{}, teams:null, gains:[], note:"", timeLeft:0, debating:false, len:"m", target:0, seen:[], seenAt:0, over:false, tie:false, decisive:false, co:null, intro:false, how:{}, lang: langStore.get() || "pt" }; }
+  if (!["coop","juri","troca"].includes(S.mode)) S.mode = "coop";
+  if (!["pt","en"].includes(S.lang)) S.lang = "pt";
+  render();
+}
+/* Três modos: coop (a mesa contra o baralho), juri (dois times e um júri), troca (dois times, todos votam e podem mudar de lado). */
+const minFor = m => m === "coop" ? 2 : 3;
+const maxRun = () => S.len === "l" ? 4 : 3;
+const teamOf = i => S.teams.V.includes(i) ? "V" : S.teams.M.includes(i) ? "M" : "";
+function targetFor(){
+  const n = S.names.length, k = { r:0, m:1, l:2 }[S.len || "m"];
+  if (S.mode === "coop") return [5,10,20][k];
+  if (S.mode === "juri") return (n === 4 ? [7,14,26] : [8,15,28])[k];
+  return (n <= 5 ? [6,10,19] : [5,8,16])[k];
+}
+const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+const howSeen = {
+  get(m){ if (S.how && S.how[m]) return true; try { return localStorage.getItem("bate-how-" + m) === "1"; } catch (e) { return false; } },
+  set(m){ (S.how || (S.how = {}))[m] = 1; try { localStorage.setItem("bate-how-" + m, "1"); } catch (e) {} }
+};
+function howto(m){
+  const T = L().howto[m];
+  return `<p class="mono">${L().howToPlay} · ${T[0]}</p><ol class="how">${T[1].map(s => `<li><span>${s}</span></li>`).join("")}</ol><p class="howpts"><i>*</i> ${T[2]}</p>`;
+}
+function newGame(showHow){
+  S.players = S.names.map(n => ({ name:n, score:0, jury:0, cred:0, cet:0, sw:0 }));
+  /* Memória do baralho: vale enquanto o app está aberto e zera 2 horas depois do primeiro jogo. */
+  const now = Date.now(); if (!S.seen || !S.seenAt || now - S.seenAt > 72e5) { S.seen = []; S.seenAt = now; }
+  let pool = CARDS.map((c, i) => i).filter(i => !S.seen.includes(CARDS[i][0])); if (!pool.length) { S.seen = []; pool = CARDS.map((c, i) => i); }
+  S.deck = shuffle(pool); S.target = targetFor(); S.over = false; S.tie = false;
+  S.co = { lvl:0, run:0, prev:0, prevRun:0, cards:0, miss:0, hit:false };
+  S.intro = !!showHow;
+  S.pos = -1; S.round = 0; S.reader = -1; S.screen = "play";
+  nextRound();
+}
+function nextRound(){
+  S.pos++; if (S.pos >= S.deck.length) { S.seen = []; S.deck = shuffle(CARDS.map((c, i) => i)); S.pos = 0; }
+  S.decisive = S.mode === "coop" ? (S.co.lvl + 1 >= S.target || S.co.run + 1 >= maxRun()) : (S.tie || S.players.some(p => p.score + (S.mode === "juri" ? 3 : 2) >= S.target));
+  S.round++; S.reader = (S.reader + 1) % S.players.length; S.phase = "discuss"; S.votes = {}; S.gains = []; S.note = ""; S.timeLeft = S.timer; S.debating = false;
+  const n = S.players.length, order = shuffle(S.players.map((p, i) => i)).sort((a, b) => S.players[a].jury - S.players[b].jury);
+  if (S.mode === "juri") {
+    const t = Math.max(1, Math.round(n / 3)), J = order.slice(0, n - 2 * t), rest = shuffle(order.slice(n - 2 * t));
+    J.forEach(i => S.players[i].jury++);
+    S.teams = { V: rest.slice(0, t), M: rest.slice(t), J: J };
+  } else if (S.mode === "troca") {
+    const J = n % 2 ? [order[0]] : [], rest = shuffle(order.slice(J.length)), t = rest.length / 2;
+    J.forEach(i => S.players[i].jury++);
+    S.teams = { V: rest.slice(0, t), M: rest.slice(t), J: J };
+    S.teams.V.forEach(i => S.votes[i] = "V"); S.teams.M.forEach(i => S.votes[i] = "M");
+  } else S.teams = null;
+  render(); window.scrollTo(0, 0);
+}
+const voters = () => S.mode === "coop" ? ["mesa"] : S.mode === "juri" ? S.teams.J : S.players.map((p, i) => i);
+function readVotes(){ if (bodies.length) { S.votes = {}; bodies.forEach(b => { if (b.zone) S.votes[b.i] = b.zone; }); } }
+function reveal(){
+  if (S.phase !== "discuss") return; readVotes();
+  const vs = voters(); if (!vs.every(i => S.votes[i])) return;
+  const ans = CARDS[S.deck[S.pos]][2], gains = {}, P = S.players;
+  const add = (i, p, w) => { const g = gains[i] || (gains[i] = { p:0, w:[] }); g.p += p; g.w.push(w); };
+  S.seen.push(CARDS[S.deck[S.pos]][0]); S.note = "";
+  const T = L();
+  if (S.mode === "coop") {
+    const c = S.co, ok = S.votes.mesa === ans; c.cards++; c.prev = c.lvl; c.prevRun = c.run; c.hit = ok;
+    if (ok) { c.lvl++; c.run = 0; } else { c.run++; c.miss++; }
+    S.over = c.lvl >= S.target || c.run >= maxRun(); S.tie = false;
+  } else {
+    vs.forEach(i => { if (S.votes[i] !== ans) { if (S.votes[i] === "V") P[i].cred++; else P[i].cet++; } });
+    const v = vs.filter(i => S.votes[i] === "V").length, m = vs.length - v, win = v > m ? "V" : m > v ? "M" : null;
+    if (S.mode === "juri") {
+      vs.filter(i => S.votes[i] === ans).forEach(i => add(i, 2, T.rJuriRight));
+      if (win) { const fooled = win !== ans; S.teams[win].forEach(i => add(i, fooled ? 3 : 2, fooled ? T.rFooledJuri : T.rConvincedJuri)); }
+      else S.teams.V.concat(S.teams.M).forEach(i => add(i, 1, T.rSplitJuri));
+    } else {
+      vs.forEach(i => { const A = teamOf(i), F = S.votes[i];
+        if (!A) { if (F === ans) add(i, 1, T.rNoTeamRight); return; }
+        if (F !== A) { P[i].sw++; if (F === ans) add(i, 2, T.rSwitchRight); else add(i, -1, T.rSwitchWrong); return; }
+        if (!win) return;
+        if (win === ans) add(i, 1, T.rTableRight); else if (A === win) add(i, 1, T.rFooledTable); });
+      S.note = !win ? T.noteTie : win === ans ? T.noteRight : T.noteFooled;
+    }
+    S.gains = Object.keys(gains).map(i => { const before = P[i].score; P[i].score = Math.max(0, before + gains[i].p); return { i:+i, p:P[i].score - before, w:gains[i].w.join(", ") }; }).sort((a, b) => b.p - a.p);
+    const top = Math.max(...P.map(p => p.score)), lead = P.filter(p => p.score === top).length;
+    S.over = top >= S.target && lead === 1; S.tie = top >= S.target && lead > 1;
+  }
+  const sus = S.decisive ? 2600 : 900; vib(S.decisive ? [60,140,60,420,60,140,60,420,60,140,60,420] : [30,80,30]); setTimeout(() => vib(S.decisive ? [300,80,300] : 160), sus + 500);
+  S.phase = "reveal"; render(); window.scrollTo(0, 0);
+}
+const fmt = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+function runTimer(){
+  clearInterval(tick); tick = null;
+  if (!(S.screen === "play" && S.phase === "discuss" && S.timer > 0)) return;
+  tick = setInterval(() => {
+    if (!S.debating) return; if (S.timeLeft > 0) S.timeLeft--;
+    const el = $("t"); if (el) { el.textContent = S.timeLeft > 0 ? fmt(S.timeLeft) : L().timeUp; if (S.timeLeft === 0) { el.style.background = "var(--pink)"; el.style.borderColor = "var(--pink)"; el.style.color = "var(--ground)"; } }
+  }, 1000);
+}
+const ranking = () => S.players.slice().sort((a, b) => b.score - a.score);
+const rankList = () => `<ol class="rank">${ranking().map(p => `<li><span>${esc(p.name)}</span><span>${p.score}</span></li>`).join("")}</ol>`;
+const bubSize = l => (30 + 70 * Math.min(1, l / S.target)).toFixed(0) + "%";
+const bubText = (l, r) => S.lang === "en"
+  ? `bubble ${l} of ${S.target}` + (r ? ` · ${r} miss${r === 1 ? "" : "es"} in a row, ${maxRun()} and it wilts` : "")
+  : `bolha ${l} de ${S.target}` + (r ? ` · ${r} ${r === 1 ? "erro seguido" : "erros seguidos"}, com ${maxRun()} ela murcha` : "");
+function bubble(l, r){
+  return `<div class="bub" id="bub" data-run="${r}" style="--s:${bubSize(l)}"><div class="pop" aria-hidden="true">${[0,1,2,3,4,5,6,7].map(i => `<span style="--a:${i * 45}deg;--d:${(i % 3) * 0.06}s">${AST}</span>`).join("")}</div><div class="bub-b"><svg viewBox="0 0 100 100" aria-hidden="true"><path class="c1" d="M50 8l-7 16 9 9-6 14"/><path class="c2" d="M88 40l-15 4-5 12-14 2"/><path class="c3" d="M22 84l8-14-6-10 12-10"/><path class="c4" d="M70 90l-4-15 8-8"/></svg></div></div><p class="mono" id="bubtxt" style="text-align:center">${bubText(l, r)}</p>`;
+}
+
+function viewSetup(){
+  const ok = S.names.length >= minFor(S.mode), T = L();
+  return `<div class="page">
+  <div class="bar" style="padding:0;justify-content:flex-end">${LANGBTN()}</div>
+  <h1 class="wm big" aria-label="The Bate">the<br>bate<i>*</i></h1>
+  <p class="mono"><span style="color:var(--pink)">*</span> ${T.sub}</p>
+  <div class="group"><p class="mono">${T.who}</p>
+    <div class="names">${S.names.map((n, i) => `<span class="tagn ${justAdded && i === S.names.length - 1 ? "new" : ""}">${esc(n)}<button class="x" data-act="rm" data-i="${i}" aria-label="${T.rmAria(esc(n))}">×</button></span>`).join("")}</div>
+    ${S.example ? `<p class="mono">${T.exampleNote}</p>` : ""}
+    <form class="addrow" id="addf"><input type="text" id="newname" maxlength="12" placeholder="${T.namePh}" autocomplete="off" aria-label="${T.nameAria}"><button class="addbtn ${justAdded ? "burst" : ""}" id="addbtn" type="submit" aria-label="${T.addAria}">${AST}</button></form>
+  </div>
+  <div class="group"><p class="mono">${T.howPlays}</p>
+    <div class="modes">
+      <button class="mode wide" data-act="mode" data-v="coop" aria-pressed="${S.mode === "coop"}"><i class="ink"></i>${T.modeCoop}<span>${T.modeCoopSub}</span></button>
+      <button class="mode" data-act="mode" data-v="juri" aria-pressed="${S.mode === "juri"}"><i class="ink"></i>${T.modeJuri}<span>${T.modeJuriSub}</span></button>
+      <button class="mode" data-act="mode" data-v="troca" aria-pressed="${S.mode === "troca"}"><i class="ink"></i>${T.modeTroca}<span>${T.modeTrocaSub}</span></button>
+    </div>
+    <p class="mono" id="modewarn" style="color:var(--pink)" ${ok ? "hidden" : ""}>${T.modewarn(minFor(S.mode))}</p>
+  </div>
+  <div class="group"><p class="mono">${T.duration}</p>
+    <div class="lens" id="lens">${[["r",T.len[0],"5"],["m",T.len[1],"10"],["l",T.len[2],"20"]].map(o => `<button class="len" data-act="len" data-v="${o[0]}" aria-pressed="${(S.len || "m") === o[0]}">${o[1]}<span>${T.lenCards(o[2])}</span></button>`).join("")}
+      <div class="lens-top noanim" id="lenstop" aria-hidden="true">${[[T.len[0],"5"],[T.len[1],"10"],[T.len[2],"20"]].map(o => `<span class="len">${o[0]}<span>${T.lenCards(o[1])}</span></span>`).join("")}</div></div>
+  </div>
+  <div class="group"><p class="mono" id="tl">${T.debateTime}</p>
+    <p class="tval" id="tval">${S.timer ? fmt(S.timer) : T.noClock}</p>
+    <div class="sl" id="sl" role="slider" tabindex="0" aria-labelledby="tl" aria-valuemin="0" aria-valuemax="300" aria-valuenow="${S.timer}">
+      <div class="sl-track"><div class="sl-fill" id="slf"></div></div><div class="sl-thumb" id="slt">${AST}</div>
+    </div>
+  </div>
+  <button class="go wide" id="startbtn" data-act="start" ${ok ? "" : "disabled"}>${T.start}</button>
+  <button class="pill" data-act="help" style="align-self:center">${T.howToPlay}</button>
+  <section class="sheet fixed" id="helpsheet" hidden>
+    <div class="bar" style="padding:0">${WM("small")}<button class="pill" data-act="help">${T.close}</button></div>
+    <div class="howbox" id="helpbody">${howto(S.mode)}</div>
+    <div class="push"><button class="go wide" data-act="help">${T.gotIt}</button></div>
+  </section></div>`;
+}
+function viewArena(){
+  const c = CARDS[S.deck[S.pos]], ct = cardText(c), P = S.players, list = a => a.map(i => esc(P[i].name)).join(", "), m = S.mode, T = L();
+  const chips = m === "coop" ? `<button class="chip mesa" data-i="mesa">${T.table}</button>` : voters().map(i => `<button class="chip" data-i="${i}" data-t="${m === "troca" ? teamOf(i) : ""}">${esc(P[i].name)}</button>`).join("");
+  return `<div class="play">
+  <div class="bar">${WM("small")}<span class="pill" id="t" ${S.timer > 0 ? "" : "hidden"}>${fmt(S.timeLeft)}</span><button class="pill" data-act="board">${m === "coop" ? T.bubbleOf(S.co.lvl, S.target) : T.scoreboard}</button></div>
+  <div class="arena" id="arena">
+    <div class="blob bv"></div><div class="blob bv ol"></div><div class="blob bm"></div><div class="blob bm ol"></div>
+    <span class="zl v">${T.truth}</span><span class="zl m">${T.lie}</span>
+    ${m === "juri" ? `<span class="team v">${T.defending(list(S.teams.V))}</span><span class="team m">${T.defending(list(S.teams.M))}</span>` : ""}
+    <span class="mid mono" ${m === "troca" ? "" : `id="mid"`}>${m === "coop" ? T.midCoop : m === "juri" ? T.midJuri : T.midTroca}</span>
+    ${chips}
+  </div>
+  <div class="bar"><button class="pill" data-act="reread">${T.rereadCard}</button><button class="go" id="flip" data-act="reveal" disabled>${T.flip}</button></div>
+  <section class="sheet" id="cardsheet" ${S.debating ? "hidden" : ""}>
+    <div class="bar" style="padding:0">${WM("small")}<span class="pill ${S.decisive ? "hot" : ""}">${S.tie ? T.tiebreak : S.decisive ? T.decisive : T.roundN(String(S.round).padStart(2, "0"))}</span></div>
+    <p class="mono">${T.reads(esc(P[S.reader].name))}${m === "coop" ? T.coopTie : ""}</p>
+    <p class="stmt">${esc(ct[0])}</p>
+    <div class="push"><button class="go wide" data-act="debate">${T.debate}</button></div>
+  </section>
+  <section class="sheet" id="boardsheet" hidden>${m === "coop" ? `<p class="mono">${T.boardCoop}</p>${bubble(S.co.lvl, S.co.run)}` : `<p class="mono">${T.boardElse(S.target)}</p>${rankList()}`}<div class="push"><button class="go wide" data-act="board">${T.back}</button><button class="pill" data-act="end" style="align-self:center">${T.endGame}</button></div></section>
+  <section class="sheet" id="introsheet" style="z-index:6" ${S.intro ? "" : "hidden"}>
+    <div class="bar" style="padding:0">${WM("small")}<span class="pill">${T.howToPlay}</span></div>
+    <div class="howbox">${howto(m)}</div>
+    <div class="push"><button class="go wide" data-act="intro">${T.letsgo}</button><button class="pill" data-act="setup" style="align-self:center">${T.back}</button></div>
+  </section>
+  </div>`;
+}
+function viewReveal(){
+  const c = CARDS[S.deck[S.pos]], ct = cardText(c), v = c[2] === "V", P = S.players, co = S.mode === "coop", T = L();
+  const sus = S.decisive ? 2.6 : 0.9, sign = n => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n);
+  const curtain = `<div class="curtain ${v ? "v" : "m"}" style="--sus:${sus}s;--end:${sus + 1.5}s" aria-hidden="true"><span class="dot c"></span><span class="dot p"></span>${S.decisive ? `<span class="mono dec">${T.decisive}</span>` : ""}<span class="flood"></span><span class="word">${v ? T.truth : T.lie}</span></div>`;
+  const body = co
+    ? `<p class="solo">${S.co.hit ? T.hitTxt : T.missTxt}</p>${bubble(S.co.prev, S.co.prevRun)}${S.over ? `<p class="champ" id="fin" hidden>${S.co.lvl >= S.target ? T.tableWon : T.deckWon}<span style="color:var(--pink)">*</span></p><p class="why" id="fintxt" hidden>${S.co.lvl >= S.target ? T.wonWhy(S.co.cards, S.co.miss) : T.lostWhy(maxRun(), S.co.lvl, S.target)}</p>` : ""}`
+    : `${S.note ? `<p class="solo"><i>*</i> ${S.note}</p>` : ""}${S.gains.length ? `<ul class="rank">${S.gains.map(g => `<li><span>${esc(P[g.i].name)}<small>${esc(g.w)}</small></span><span>${sign(g.p)}</span></li>`).join("")}</ul>` : `<p class="mono">${T.nobodyScored}</p>`}`;
+  const next = co ? (S.over ? (S.co.lvl >= S.target ? T.popBubble : T.seeEnd) : T.nextCard) : (S.over ? T.seeWinner : S.tie ? T.tiebreakCard : T.nextCard);
+  return `<div class="page">${curtain}
+  <div class="bar" style="padding:0">${WM("small")}<span class="pill">${co ? T.bubbleOf(S.co.lvl, S.target) : T.boardElse(S.target)}</span></div>
+  <p class="verdict ${v ? "v" : "m"}">${v ? T.truth : T.lie}</p>
+  <p class="quote">${esc(ct[0])}</p>
+  <p class="why">${esc(ct[1])}</p>
+  ${body}
+  ${co && S.over ? `<div class="push" id="finbtn" hidden><button class="go wide" data-act="again">${T.playAgain}</button><button class="pill" data-act="setup" style="align-self:center">${T.changeSetup}</button></div></div>`
+    : `<div class="push"><button class="go wide" data-act="next">${next}</button><button class="pill" data-act="end" style="align-self:center">${T.endGame}</button></div></div>`}`;
+}
+function viewEnd(){
+  const T = L();
+  const again = `<div class="push"><button class="go wide" data-act="again">${T.playAgain}</button><button class="pill" data-act="setup" style="align-self:center">${T.changeSetup}</button></div></div>`;
+  if (S.mode === "coop") {
+    const c = S.co, won = c.lvl >= S.target, lost = c.run >= maxRun();
+    return `<div class="page">
+    <div class="bar" style="padding:0">${WM("small")}${LANGBTN()}<span class="pill">${T.cardsN(c.cards)}</span></div>
+    <p class="mono">${won ? T.bubblePopped : lost ? T.bubbleWilted : T.gameEnded}</p>
+    ${won ? `<div class="pop" aria-hidden="true">${[0,1,2,3,4,5,6,7].map(i => `<span style="--a:${i * 45}deg;--d:${(i % 3) * 0.06}s">${AST}</span>`).join("")}</div>` : ""}
+    <p class="champ">${won ? T.tableWon : lost ? T.deckWon : T.techTie}<span style="color:var(--pink)">*</span></p>
+    <p class="why">${won ? T.wonWhy(c.cards, c.miss) : lost ? T.lostWhy(maxRun(), c.lvl, S.target) : T.bubbleAt(c.lvl, S.target)}</p>
+    ${again}`;
+  }
+  const r = ranking(), top = r[0], tie = r.filter(p => p.score === top.score);
+  const best = k => { const m = Math.max(...S.players.map(p => p[k])); return m > 0 ? S.players.filter(p => p[k] === m).map(p => p.name).join(T.and) : null; };
+  const titles = [[T.titleTurncoat, T.titleTurncoatSub, best("sw")], [T.titleGullible, T.titleGullibleSub, best("cred")], [T.titleSkeptic, T.titleSkepticSub, best("cet")]].filter(t => t[2]);
+  return `<div class="page">
+  <div class="bar" style="padding:0">${WM("small")}${LANGBTN()}<span class="pill">${T.roundsN(S.round)}</span></div>
+  <p class="mono">${tie.length > 1 ? T.tieBetween : T.wonDebate}</p>
+  <p class="champ">${esc(tie.map(p => p.name).join(" & "))}<span style="color:var(--pink)">*</span></p>
+  ${rankList()}
+  ${titles.length ? `<ul class="rank">${titles.map(t => `<li><span>${t[0]}<small>${t[1]}</small></span><span>${esc(t[2])}</span></li>`).join("")}</ul>` : ""}
+  ${again}`;
+}
+function render(){
+  cancelAnimationFrame(raf); raf = null; bodies = []; grab = null; decided = -1;
+  document.documentElement.lang = S.lang === "en" ? "en" : "pt-BR";
+  $app.innerHTML = S.screen === "setup" ? viewSetup() : S.screen === "end" ? viewEnd() : S.phase === "reveal" ? viewReveal() : viewArena();
+  if (S.screen === "play" && S.phase === "discuss") initArena();
+  if (S.screen === "play" && S.phase === "reveal" && S.mode === "coop") { /* a bolha só reage depois que a cortina da revelação sai */
+    const el = $("bub"), c = S.co;
+    setTimeout(() => { if (!el.isConnected) return; el.style.setProperty("--s", bubSize(c.lvl)); el.dataset.run = c.run; $("bubtxt").textContent = bubText(c.lvl, c.run); vib(c.hit ? 40 : [80,60,80]);
+      if (S.over) setTimeout(() => { if (!el.isConnected) return; const won = c.lvl >= S.target;
+        el.scrollIntoView({ behavior:"smooth", block:"center" }); el.classList.add(won ? "burst" : "flat"); if (!won) el.style.setProperty("--s", "4%");
+        $("bubtxt").textContent = won ? "a bolha estourou" : "a bolha murchou"; ["fin","fintxt","finbtn"].forEach(id => $(id).hidden = false); vib(won ? [60,40,60,40,300] : [400]); }, 1300);
+    }, (S.decisive ? 2600 : 900) + 1700);
+  }
+  cancelAnimationFrame(slRaf); slRaf = null; if (S.screen === "setup") { initSlider(); placeLens(false); }
+  justAdded = false;
+  runTimer();
+}
+
+function placeLens(anim){
+  const box = $("lens"), top = $("lenstop"); if (!box) return;
+  const b = box.querySelector(`button[data-v="${S.len || "m"}"]`), l = b.offsetLeft, r = box.clientWidth - l - b.offsetWidth, prev = parseFloat(top.style.getPropertyValue("--l")) || 0;
+  top.classList.toggle("noanim", !anim); top.classList.toggle("left", l < prev);
+  top.style.setProperty("--l", l + "px"); top.style.setProperty("--r", r + "px");
+}
+/* Slider de tempo: o asterisco rola, estica com a velocidade, quica ao soltar e continua girando por inércia. */
+function initSlider(){
+  const sl = $("sl"), th = $("slt"), fill = $("slf"), ast = th.firstElementChild, lab = $("tval");
+  const snap = p => { let s = Math.round(p * 20) * 15; if (s === 15) s = p * 300 < 15 ? 0 : 30; return s; };
+  let tx = Math.min(1, S.timer / 300), x = tx, v = 0, ang = x * 700, w = 0, drag = false, cur = S.timer;
+  const show = s => { const nc = L().noClock; lab.textContent = s ? fmt(s) : nc; sl.setAttribute("aria-valuenow", s); sl.setAttribute("aria-valuetext", s ? fmt(s) : nc); };
+  const draw = () => { const W = sl.clientWidth, px = 28 + x * (W - 56), st = 1 + Math.min(.3, Math.abs(v) * 9) * Math.min(1, Math.min(x, 1 - x) * 8);
+    th.style.transform = `translateX(${px.toFixed(1)}px) scale(${st.toFixed(3)},${(1 / st).toFixed(3)})`; ast.style.transform = `rotate(${ang.toFixed(1)}deg)`; fill.style.transform = `scaleX(${(px / W).toFixed(4)})`; };
+  let lt = 0;
+  const loop = ts => {
+    if (!sl.isConnected) { slRaf = null; return; }
+    const f = lt ? Math.min(2, (ts - lt) / 16.7) : 1; lt = ts;
+    if (STILL) { x = tx; v = 0; w = 0; }
+    else { /* mola calculada por tempo (igual em telas de 60 e 120 Hz) e presa às pontas do trilho */
+      v += (tx - x) * 0.13 * f; v *= Math.pow(0.78, f); let dx = v * f; x += dx;
+      if (x < 0) { dx -= x; x = 0; v = Math.abs(v) * 0.2; } else if (x > 1) { dx -= x - 1; x = 1; v = -Math.abs(v) * 0.2; }
+      const roll = dx * (sl.clientWidth - 56) / 28 * 57.3; w = w * Math.pow(0.955, f) + roll * 0.3; ang += roll + w * f; }
+    draw();
+    slRaf = (drag || Math.abs(v) > 0.0004 || Math.abs(tx - x) > 0.0004 || Math.abs(w) > 0.08) ? requestAnimationFrame(loop) : null;
+    if (!slRaf) lt = 0;
+  };
+  const kick = () => { if (!slRaf) slRaf = requestAnimationFrame(loop); };
+  const set = p => { tx = Math.max(0, Math.min(1, p)); const s = snap(tx); if (s !== cur) { cur = s; S.timer = s; show(s); vib(8); } kick(); };
+  const at = e => { const r = sl.getBoundingClientRect(); return (e.clientX - r.left - 28) / (r.width - 56); };
+  sl.addEventListener("pointerdown", e => { drag = true; try { sl.setPointerCapture(e.pointerId); } catch (err) {} set(at(e)); });
+  sl.addEventListener("pointermove", e => { if (drag) set(at(e)); });
+  const end = () => { if (!drag) return; drag = false; tx = cur / 300; kick(); };
+  sl.addEventListener("pointerup", end); sl.addEventListener("pointercancel", end);
+  sl.addEventListener("keydown", e => { const d = (e.key === "ArrowRight" || e.key === "ArrowUp") ? 1 : (e.key === "ArrowLeft" || e.key === "ArrowDown") ? -1 : 0; if (!d) return;
+    e.preventDefault(); let s = cur + d * 15; if (s === 15) s = d > 0 ? 30 : 0; s = Math.max(0, Math.min(300, s)); tx = s / 300; set(tx); });
+  draw();
+}
+
+/* Nomes flutuando: deriva lenta, inércia ao soltar, empurrão suave entre eles. O lado em que o nome está é o voto. */
+function initArena(){
+  arena = $("arena"); const W = arena.clientWidth, H = arena.clientHeight;
+  bodies = [...arena.querySelectorAll(".chip")].map(el => {
+    const w = el.offsetWidth, h = el.offsetHeight, i = el.dataset.i, v = S.votes[i];
+    const band = v === "V" ? [0.1, 0.26] : v === "M" ? [0.74, 0.9] : [0.43, 0.57];
+    return { el, i, w, h, x: 8 + Math.random() * Math.max(1, W - w - 16), y: H * (band[0] + Math.random() * (band[1] - band[0])) - h / 2,
+      vx: (Math.random() - .5) * 1.4, vy: (Math.random() - .5) * 1.4, rot: (Math.random() - .5) * 12, ph: Math.random() * 6.28, zone: null, drag: false, free: false, anchor: v || "", team: el.dataset.t || "" };
+  });
+  last = 0; raf = requestAnimationFrame(frame);
+}
+function frame(ts){
+  if (!arena || !arena.isConnected) { raf = null; return; }
+  const f = last ? Math.min(2.5, (ts - last) / 16.7) : 1; last = ts;
+  const W = arena.clientWidth, H = arena.clientHeight, damp = Math.pow(0.975, f);
+  for (let a = 0; a < bodies.length; a++) for (let b = a + 1; b < bodies.length; b++) {
+    const A = bodies[a], B = bodies[b], dx = (B.x + B.w / 2) - (A.x + A.w / 2), dy = (B.y + B.h / 2) - (A.y + A.h / 2);
+    const d = Math.hypot(dx, dy) || 0.01, min = (A.w + A.h + B.w + B.h) / 4;
+    if (d < min) { const p = (min - d) * 0.035 * f, nx = dx / d, ny = dy / d;
+      if (!A.drag) { A.vx -= nx * p; A.vy -= ny * p; } if (!B.drag) { B.vx += nx * p; B.vy += ny * p; } }
+  }
+  let n = 0;
+  bodies.forEach(b => {
+    if (!b.drag) {
+      const cy = (b.y + b.h / 2) / H;
+      if (!STILL) { b.vx += Math.cos(ts / 1700 + b.ph) * 0.006 * f; b.vy += Math.sin(ts / 2300 + b.ph * 1.7) * 0.006 * f; }
+      /* Campo magnético: nome solto num lado fica ancorado nele; batidas empurram mas não tiram do lado. */
+      const top = b.anchor === "V" ? 0 : b.anchor === "M" ? 0.72 : 0.41, bot = b.anchor === "V" ? 0.28 : b.anchor === "M" ? 1 : 0.59;
+      if (b.free) { if (Math.hypot(b.vx, b.vy) < 0.7) { b.free = false; b.anchor = cy < 0.36 ? "V" : cy > 0.64 ? "M" : ""; } }
+      else if (cy < top) b.vy += (top - cy) * H * 0.012 * f; else if (cy > bot) b.vy -= (cy - bot) * H * 0.012 * f;
+      b.vx *= damp; b.vy *= damp; b.x += b.vx * f; b.y += b.vy * f;
+      if (!b.free) { const lo = (b.anchor === "M" ? 0.655 : b.anchor === "V" ? 0 : 0.375) * H - b.h / 2, hi = (b.anchor === "V" ? 0.345 : b.anchor === "M" ? 1 : 0.625) * H - b.h / 2;
+        if (b.y < lo) { b.y = lo; b.vy = Math.max(b.vy, 0); } else if (b.y > hi) { b.y = hi; b.vy = Math.min(b.vy, 0); } }
+      if (b.x < 4) { b.x = 4; b.vx = Math.abs(b.vx) * .6; } else if (b.x > W - b.w - 4) { b.x = W - b.w - 4; b.vx = -Math.abs(b.vx) * .6; }
+      if (b.y < 4) { b.y = 4; b.vy = Math.abs(b.vy) * .6; } else if (b.y > H - b.h - 4) { b.y = H - b.h - 4; b.vy = -Math.abs(b.vy) * .6; }
+    }
+    const c = (b.y + b.h / 2) / H, z = (b.drag || b.free) ? (c < 0.36 ? "V" : c > 0.64 ? "M" : "") : b.anchor;
+    if (z !== b.zone) { b.zone = z; b.el.classList.toggle("in", !!z); if (b.team) b.el.classList.toggle("trai", !!z && z !== b.team); }
+    if (z) n++;
+    b.el.style.transform = `translate3d(${b.x.toFixed(1)}px,${b.y.toFixed(1)}px,0) rotate(${(b.rot + b.vx * 2.2).toFixed(1)}deg)`;
+  });
+  if (n !== decided) { decided = n; const btn = $("flip"), left = bodies.length - n, T = L();
+    if (btn) { btn.disabled = left > 0; btn.textContent = left > 0 ? (S.mode === "coop" ? T.decide : left === 1 ? T.oneLeft : T.nLeft(left)) : T.flipCard; }
+    const mid = $("mid"); if (mid) mid.style.opacity = n > 0 ? 0 : 1; }
+  raf = requestAnimationFrame(frame);
+}
+const pt = e => { const r = arena.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+$app.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".chip"); if (!el) return; const b = bodies.find(x => x.el === el); if (!b) return;
+  const [px, py] = pt(e); grab = { b, ox: px - b.x, oy: py - b.y }; b.drag = true; b.vx = b.vy = 0; el.classList.add("held");
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+});
+$app.addEventListener("pointermove", e => {
+  if (!grab) return; const b = grab.b, [px, py] = pt(e), W = arena.clientWidth, H = arena.clientHeight;
+  const nx = Math.max(4, Math.min(W - b.w - 4, px - grab.ox)), ny = Math.max(4, Math.min(H - b.h - 4, py - grab.oy));
+  b.vx = b.vx * .5 + (nx - b.x) * .5; b.vy = b.vy * .5 + (ny - b.y) * .5; b.x = nx; b.y = ny;
+});
+function release(){ if (!grab) return; const b = grab.b; grab = null; b.drag = false; b.free = true; b.el.classList.remove("held");
+  const sp = Math.hypot(b.vx, b.vy), max = 24; if (sp > max) { b.vx *= max / sp; b.vy *= max / sp; } }
+$app.addEventListener("pointerup", release);
+$app.addEventListener("pointercancel", release);
+
+$app.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act;
+  const warn = () => { const min = minFor(S.mode), ok = S.names.length >= min, w = $("modewarn"); w.hidden = ok; w.textContent = `este modo precisa de pelo menos ${min} jogadores.`; $("startbtn").disabled = !ok; };
+  if (a === "lang") { S.lang = S.lang === "pt" ? "en" : "pt"; langStore.set(S.lang); render(); return; }
+  if (a === "debate") { S.debating = true; $("cardsheet").hidden = true; return; }
+  if (a === "reread") { $("cardsheet").hidden = false; return; }
+  if (a === "board") { const s = $("boardsheet"); s.hidden = !s.hidden; return; }
+  if (a === "intro") { S.intro = false; howSeen.set(S.mode); $("introsheet").hidden = true; return; }
+  if (a === "reveal") return reveal();
+  if (a === "start" || a === "again") return newGame(a === "start");
+  if (a === "next") { if (!S.over) return nextRound(); S.screen = "end"; }
+  if (a === "help") { const s = $("helpsheet"); $("helpbody").innerHTML = howto(S.mode); s.hidden = !s.hidden; return; }
+  if (a === "len") { S.len = b.dataset.v; document.querySelectorAll("#lens > button").forEach(m => m.setAttribute("aria-pressed", m === b)); placeLens(true); vib(10); return; }
+  if (a === "mode") { /* a tinta nasce no ponto do toque e enche o botão; o outro esvazia */
+    if (e.detail) { const r = b.getBoundingClientRect(); b.style.setProperty("--ox", (e.clientX - r.left) + "px"); b.style.setProperty("--oy", (e.clientY - r.top) + "px"); }
+    S.mode = b.dataset.v; document.querySelectorAll(".mode").forEach(m => m.setAttribute("aria-pressed", m === b));
+    warn(); vib(10); return; }
+  if (a === "sub") { S.sub = S.mode = b.dataset.v; document.querySelectorAll("#subs > button").forEach(m => m.setAttribute("aria-pressed", m === b)); warn(); vib(10); return; }
+  if (a === "rm") { S.names.splice(+b.dataset.i, 1); S.example = false; store.set(S.names); }
+  else if (a === "end") S.screen = "end";
+  else if (a === "setup") S.screen = "setup";
+  render();
+});
+$app.addEventListener("submit", e => {
+  e.preventDefault(); const inp = $("newname"), n = inp.value.trim();
+  if (!n) return; if (S.example) { S.names = []; S.example = false; }
+  if (!S.names.includes(n) && S.names.length < 12) { S.names.push(n); justAdded = true; }
+  store.set(S.names); render(); $("newname").focus();
+});
+$app.addEventListener("input", e => { if (e.target.id === "newname") { const b = $("addbtn"); if (b) b.classList.toggle("ready", !!e.target.value.trim()); } });
+window.claude?.hot?.snapshot?.(() => { readVotes(); return S; });
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start({});
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "The Bate",
+  "short_name": "The Bate",
+  "description": "Verdade ou mentira? Convencer vale mais do que estar certo.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0E1F1A",
+  "theme_color": "#0E1F1A",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
