@@ -158,8 +158,9 @@ select option{color:#111}
 .subs{display:flex;gap:8px}
 .pill[aria-pressed="true"]{background:var(--cream);color:var(--ground)}
 .pill[aria-pressed]{transition:background .3s,color .3s}
-.chip.mesa{height:80px;padding:0 34px;font-size:30px;background:var(--pink);border-color:var(--pink);color:var(--ground)}
-.chip.mesa.in{background:var(--cream);border-color:var(--cream)}
+.chip.mesa{height:80px;padding:0 34px;font-size:30px;background:var(--cream);border-color:var(--cream);color:var(--ground)}
+.chip.mesa.v{background:var(--cobalt);border-color:var(--cobalt);color:var(--cream)}
+.chip.mesa.m{background:var(--pink);border-color:var(--pink);color:var(--ground)}
 .chip.trai{background:var(--ground);color:var(--pink);border-color:var(--pink)}
 .chip.trai::after{content:"*"}
 .howbox{display:flex;flex-direction:column;gap:18px}
@@ -507,7 +508,6 @@ const CARDS = [
 ["m151", "tabu", "M", `No século 19, mulheres removiam costelas cirurgicamente para caber no espartilho.`, `Não há registro médico de nenhuma cirurgia desse tipo, que na época seria quase sempre fatal.`, `In the 19th century, women had ribs surgically removed to fit into corsets.`, `There's no medical record of any such surgery, which at the time would almost always have been fatal.`]
 ];
 
-const EXAMPLE = ["Gustavo","Luísa","Marcela","Camila","Felipe"];
 const STILL = false; /* as animações são parte do jogo: rodam mesmo com "reduzir movimento" ligado no aparelho */
 let S = null, tick = null, bodies = [], raf = null, arena = null, grab = null, last = 0, decided = -1;
 const $app = document.getElementById("app");
@@ -525,7 +525,7 @@ const L = () => I18N[S.lang] || I18N.pt;
 const I18N = {
   pt: {
     sub: "convencer vale mais do que estar certo. a certeza é a primeira mentira.",
-    who: "quem joga", exampleNote: "nomes de exemplo. adicione os da sua mesa.",
+    who: "quem joga",
     namePh: "nome", nameAria: "Nome do jogador", addAria: "Adicionar jogador", rmAria: n => `Remover ${n}`,
     howPlays: "como joga",
     modeCoop: "cooperativo", modeCoopSub: "a mesa inteira contra o baralho",
@@ -570,7 +570,7 @@ const I18N = {
   },
   en: {
     sub: "convincing beats being right. certainty is the first lie.",
-    who: "who's playing", exampleNote: "example names. add your own group.",
+    who: "who's playing",
     namePh: "name", nameAria: "Player name", addAria: "Add player", rmAria: n => `Remove ${n}`,
     howPlays: "how it's played",
     modeCoop: "co-op", modeCoopSub: "the whole table against the deck",
@@ -618,7 +618,7 @@ const I18N = {
 function start(data){
   if (data && data.screen) S = data;
   else { const saved = store.get(), has = saved && saved.length;
-    S = { screen:"setup", mode:"coop", sub:"juri", timer:90, names: has ? saved : EXAMPLE.slice(), example: !has,
+    S = { screen:"setup", mode:"coop", sub:"juri", timer:90, names: has ? saved : [], example: false,
       players:[], deck:[], pos:0, round:0, reader:-1, phase:"discuss", votes:{}, teams:null, gains:[], note:"", timeLeft:0, debating:false, len:"m", target:0, seen:[], seenAt:0, over:false, tie:false, decisive:false, co:null, intro:false, how:{}, lang: langStore.get() || "pt" }; }
   if (!["coop","juri","troca"].includes(S.mode)) S.mode = "coop";
   if (!["pt","en"].includes(S.lang)) S.lang = "pt";
@@ -733,7 +733,6 @@ function viewSetup(){
   <p class="mono"><span style="color:var(--pink)">*</span> ${T.sub}</p>
   <div class="group"><p class="mono">${T.who}</p>
     <div class="names">${S.names.map((n, i) => `<span class="tagn ${justAdded && i === S.names.length - 1 ? "new" : ""}">${esc(n)}<button class="x" data-act="rm" data-i="${i}" aria-label="${T.rmAria(esc(n))}">×</button></span>`).join("")}</div>
-    ${S.example ? `<p class="mono">${T.exampleNote}</p>` : ""}
     <form class="addrow" id="addf"><input type="text" id="newname" maxlength="12" placeholder="${T.namePh}" autocomplete="off" aria-label="${T.nameAria}"><button class="addbtn ${justAdded ? "burst" : ""}" id="addbtn" type="submit" aria-label="${T.addAria}">${AST}</button></form>
   </div>
   <div class="group"><p class="mono">${T.howPlays}</p>
@@ -924,7 +923,7 @@ function frame(ts){
       if (b.y < 4) { b.y = 4; b.vy = Math.abs(b.vy) * .6; } else if (b.y > H - b.h - 4) { b.y = H - b.h - 4; b.vy = -Math.abs(b.vy) * .6; }
     }
     const c = (b.y + b.h / 2) / H, z = (b.drag || b.free) ? (c < 0.36 ? "V" : c > 0.64 ? "M" : "") : b.anchor;
-    if (z !== b.zone) { b.zone = z; b.el.classList.toggle("in", !!z); if (b.team) b.el.classList.toggle("trai", !!z && z !== b.team); }
+    if (z !== b.zone) { b.zone = z; b.el.classList.toggle("in", !!z); b.el.classList.toggle("v", z === "V"); b.el.classList.toggle("m", z === "M"); if (b.team) b.el.classList.toggle("trai", !!z && z !== b.team); }
     if (z) n++;
     b.el.style.transform = `translate3d(${b.x.toFixed(1)}px,${b.y.toFixed(1)}px,0) rotate(${(b.rot + b.vx * 2.2).toFixed(1)}deg)`;
   });
