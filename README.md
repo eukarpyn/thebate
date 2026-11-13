@@ -2,34 +2,7 @@
 
 Jogo de festa "verdade ou mentira?" — página única, sem servidor, sem custo.
 
-## Como publicar no GitHub Pages (grátis)
-
-1. **Crie uma conta no GitHub**, se ainda não tiver: https://github.com/signup
-
-2. **Crie um repositório novo**:
-   - Clique no "+" no topo da página → "New repository"
-   - Dê um nome, por exemplo `the-bate`
-   - Marque como **Public** (obrigatório para o Pages gratuito)
-   - Não marque "Add a README" (já temos um)
-   - Clique em "Create repository"
-
-3. **Envie os arquivos desta pasta** para o repositório:
-   - Na página do repositório recém-criado, clique em "uploading an existing file"
-   - Arraste **todos os arquivos e pastas daqui** (`index.html`, `manifest.json`, e a pasta `icons` inteira) para a área de upload
-   - Role para baixo e clique em "Commit changes"
-
-4. **Ative o GitHub Pages**:
-   - No repositório, vá em "Settings" (aba no topo)
-   - No menu da esquerda, clique em "Pages"
-   - Em "Source", selecione a branch `main` e a pasta `/ (root)`
-   - Clique em "Save"
-
-5. **Espere 1-2 minutos** e seu jogo estará no ar em:
-   `https://SEU-USUARIO.github.io/the-bate/`
-
-   (troque `SEU-USUARIO` pelo seu nome de usuário do GitHub, e `the-bate` pelo nome que você deu ao repositório)
-
-## Instalar como app no celular
+# Instalar como app no celular
 
 Depois de publicado, qualquer pessoa pode abrir o link no celular e:
 - **iPhone (Safari)**: tocar em "Compartilhar" → "Adicionar à Tela de Início"
